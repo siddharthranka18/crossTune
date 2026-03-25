@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">crossTune</string>
+    <string name="your_playlists">Your Playlists</string>
+    <string name="jam_groups">JAM Groups</string>
+</resources>
