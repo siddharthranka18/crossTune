@@ -2,8 +2,14 @@
     <!-- Base application theme. -->
     <style name="Base.Theme.CrossTune" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <item name="android:statusBarColor">#0A0A0A</item>
+        <item name="android:windowBackground">#0A0A0A</item>
     </style>
 
     <style name="Theme.CrossTune" parent="Base.Theme.CrossTune" />
+
+    <style name="RoundedImageView" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">32dp</item>
+    </style>
 </resources>

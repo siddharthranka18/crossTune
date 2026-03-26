@@ -1,41 +1,39 @@
 package com.example.crosstune;
-
+import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
-
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
-
 import java.util.List;
+public class JamAdapter extends RecyclerView.Adapter<JamAdapter.ViewHolder> {
 
-public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.ViewHolder> {
-    private List<PlaylistModel> list;
+    Context context;
+    List<JamModel> list;
 
-    public PlaylistAdapter(android.content.Context context, List<PlaylistModel> list) {
+    public JamAdapter(Context context, List<JamModel> list) {
+        this.context = context;
         this.list = list;
     }
 
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_playlist, parent, false);
+        View view = LayoutInflater.from(parent.getContext())
+                .inflate(R.layout.item_playlist, parent, false);
         return new ViewHolder(view);
     }
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        PlaylistModel model = list.get(position);
+
+        JamModel model = list.get(position);
+
+        holder.image.setImageResource(model.image);
         holder.title.setText(model.title);
         holder.artist.setText(model.artist);
-        holder.image.setImageResource(model.image);
-        holder.title.setVisibility(View.VISIBLE);
-        holder.artist.setVisibility(View.VISIBLE);
-        if (holder.overlay != null) {
-            holder.overlay.setVisibility(View.VISIBLE);
-        }
     }
 
     @Override
@@ -44,16 +42,16 @@ public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.ViewHo
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
+
         ImageView image;
         TextView title, artist;
-        View overlay;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
+
             image = itemView.findViewById(R.id.playlistImage);
             title = itemView.findViewById(R.id.playlistTitle);
             artist = itemView.findViewById(R.id.playlistArtist);
-            overlay = itemView.findViewById(R.id.textOverlay);
         }
     }
 }
