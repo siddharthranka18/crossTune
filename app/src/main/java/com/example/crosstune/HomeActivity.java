@@ -74,5 +74,27 @@ public class HomeActivity extends AppCompatActivity {
         PlaylistAdapter adapter = new PlaylistAdapter(this, list);
         recyclerView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
         recyclerView.setAdapter(adapter);
+        recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+                super.onScrolled(recyclerView, dx, dy);
+
+                int center = recyclerView.getWidth() / 2;
+
+                for (int i = 0; i < recyclerView.getChildCount(); i++) {
+                    View child = recyclerView.getChildAt(i);
+
+                    int childCenter = (child.getLeft() + child.getRight()) / 2;
+                    float distance = Math.abs(center - childCenter);
+
+                    float factor = Math.max(0.95f, 1.02f - (distance / center) * 0.1f);
+
+                    child.setScaleX(factor);
+                    child.setScaleY(factor);
+                    child.setAlpha(Math.max(0.85f, factor));
+                }
+            }
+        });
+
     }
 }

@@ -1,20 +1,22 @@
 package com.example.crosstune;
 
+import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
-
+import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
-
 import java.util.List;
 
 public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.ViewHolder> {
-    private List<PlaylistModel> list;
+    private final List<PlaylistModel> list;
+    private final Context context;
 
-    public PlaylistAdapter(android.content.Context context, List<PlaylistModel> list) {
+    public PlaylistAdapter(Context context, List<PlaylistModel> list) {
+        this.context = context;
         this.list = list;
     }
 
@@ -28,13 +30,23 @@ public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.ViewHo
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         PlaylistModel model = list.get(position);
+
         holder.title.setText(model.title);
         holder.artist.setText(model.artist);
         holder.image.setImageResource(model.image);
-        holder.title.setVisibility(View.VISIBLE);
-        holder.artist.setVisibility(View.VISIBLE);
+
+        // Ensure the overlay is visible so text is readable
         if (holder.overlay != null) {
             holder.overlay.setVisibility(View.VISIBLE);
+        }
+
+        if (holder.playButton != null) {
+            holder.playButton.setVisibility(View.VISIBLE);
+            holder.playButton.bringToFront();
+
+            holder.playButton.setOnClickListener(v -> {
+                Toast.makeText(context, "Playing: " + model.title, Toast.LENGTH_SHORT).show();
+            });
         }
     }
 
@@ -44,7 +56,7 @@ public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.ViewHo
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        ImageView image;
+        ImageView image, playButton;
         TextView title, artist;
         View overlay;
 
@@ -53,7 +65,10 @@ public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.ViewHo
             image = itemView.findViewById(R.id.playlistImage);
             title = itemView.findViewById(R.id.playlistTitle);
             artist = itemView.findViewById(R.id.playlistArtist);
-            overlay = itemView.findViewById(R.id.textOverlay);
+            playButton = itemView.findViewById(R.id.playButton);
+
+            // FIXED: ID must match your XML (gradientOverlay)
+            overlay = itemView.findViewById(R.id.gradientOverlay);
         }
     }
 }

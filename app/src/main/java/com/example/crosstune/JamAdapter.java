@@ -1,13 +1,16 @@
 package com.example.crosstune;
+
 import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast; // Added for the click test
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import java.util.List;
+
 public class JamAdapter extends RecyclerView.Adapter<JamAdapter.ViewHolder> {
 
     Context context;
@@ -28,12 +31,16 @@ public class JamAdapter extends RecyclerView.Adapter<JamAdapter.ViewHolder> {
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-
         JamModel model = list.get(position);
 
         holder.image.setImageResource(model.image);
         holder.title.setText(model.title);
         holder.artist.setText(model.artist);
+
+        // --- ADDED: Click Listener for the Play Button ---
+        holder.playButton.setOnClickListener(v -> {
+            Toast.makeText(context, "Playing: " + model.title, Toast.LENGTH_SHORT).show();
+        });
     }
 
     @Override
@@ -43,7 +50,7 @@ public class JamAdapter extends RecyclerView.Adapter<JamAdapter.ViewHolder> {
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
 
-        ImageView image;
+        ImageView image, playButton; // --- UPDATED: Added playButton here ---
         TextView title, artist;
 
         public ViewHolder(@NonNull View itemView) {
@@ -52,6 +59,8 @@ public class JamAdapter extends RecyclerView.Adapter<JamAdapter.ViewHolder> {
             image = itemView.findViewById(R.id.playlistImage);
             title = itemView.findViewById(R.id.playlistTitle);
             artist = itemView.findViewById(R.id.playlistArtist);
+            // --- UPDATED: Linked the playButton ID ---
+            playButton = itemView.findViewById(R.id.playButton);
         }
     }
 }
