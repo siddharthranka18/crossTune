@@ -1,7 +1,10 @@
 package com.example.crosstune;
 
+import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -22,6 +25,17 @@ public class HomeActivity extends AppCompatActivity {
 
         setupPlaylistRecycler();
         setupJamRecycler();
+
+        // --- PROFILE NAVIGATION START ---
+        // This must stay inside onCreate to work correctly
+        @SuppressLint({"MissingInflatedId", "LocalSuppress"}) ImageView profileIcon = findViewById(R.id.ic_profile);
+        if (profileIcon != null) {
+            profileIcon.setOnClickListener(v -> {
+                Intent intent = new Intent(HomeActivity.this, ProfileActivity.class);
+                startActivity(intent);
+            });
+        }
+        // --- PROFILE NAVIGATION END ---
     }
 
     private void setupPlaylistRecycler() {
@@ -50,7 +64,6 @@ public class HomeActivity extends AppCompatActivity {
                     int childCenter = (child.getLeft() + child.getRight()) / 2;
                     float distance = Math.abs(center - childCenter);
 
-                    // Keep scaling subtle so side cards stay visible and images don't over-expand.
                     float factor = Math.max(0.92f, 1.02f - (distance / center) * 0.15f);
 
                     child.setScaleX(factor);
@@ -95,6 +108,5 @@ public class HomeActivity extends AppCompatActivity {
                 }
             }
         });
-
     }
 }

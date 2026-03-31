@@ -27,7 +27,7 @@
                 android:layout_marginBottom="20dp">
 
                 <ImageView
-                    android:layout_width="55dp"
+                    android:id="@+id/logo_icon" android:layout_width="55dp"
                     android:layout_height="55dp"
                     android:src="@drawable/logo"
                     android:scaleType="centerCrop"
@@ -55,7 +55,7 @@
                         app:tint="#FFFFFF" />
 
                     <ImageView
-                        android:layout_width="24dp"
+                        android:id="@+id/ic_profile"  android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:src="@drawable/ic_profile"
                         app:tint="#FFFFFF" />
