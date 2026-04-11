@@ -1,12 +1,12 @@
 package com.example.crosstune;
 
 import android.content.Context;
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import java.util.List;
@@ -45,7 +45,11 @@ public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.ViewHo
             holder.playButton.bringToFront();
 
             holder.playButton.setOnClickListener(v -> {
-                Toast.makeText(context, "Playing: " + model.title, Toast.LENGTH_SHORT).show();
+                Intent intent = new Intent(context, NowPlayingActivity.class);
+                intent.putExtra(NowPlayingActivity.EXTRA_SONG_TITLE, model.title);
+                intent.putExtra(NowPlayingActivity.EXTRA_ARTIST_NAME, model.artist);
+                intent.putExtra(NowPlayingActivity.EXTRA_ALBUM_IMAGE, model.image);
+                context.startActivity(intent);
             });
         }
     }

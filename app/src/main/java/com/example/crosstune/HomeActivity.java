@@ -23,23 +23,35 @@ public class HomeActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
 
+        // 1. Initialize Recyclers
         setupPlaylistRecycler();
         setupJamRecycler();
 
-        // --- PROFILE NAVIGATION START ---
-        // This must stay inside onCreate to work correctly
-        @SuppressLint({"MissingInflatedId", "LocalSuppress"}) ImageView profileIcon = findViewById(R.id.ic_profile);
+        // 2. Profile Navigation
+        ImageView profileIcon = findViewById(R.id.ic_profile);
         if (profileIcon != null) {
             profileIcon.setOnClickListener(v -> {
                 Intent intent = new Intent(HomeActivity.this, ProfileActivity.class);
                 startActivity(intent);
             });
         }
-        // --- PROFILE NAVIGATION END ---
+
+        // 3. Library Navigation (Fixed ID)
+        // This MUST match the android:id="@+id/btn_library_nav" in activity_home.xml
+        ImageView libraryBtn = findViewById(R.id.btn_library_nav);
+        if (libraryBtn != null) {
+            libraryBtn.setOnClickListener(v -> {
+                Intent intent = new Intent(HomeActivity.this, LibraryActivity.class);
+                // Standard navigation to the separate Library Page
+                startActivity(intent);
+            });
+        }
     }
 
     private void setupPlaylistRecycler() {
         RecyclerView recyclerView = findViewById(R.id.playlistRecycler);
+        if (recyclerView == null) return;
+
         List<PlaylistModel> list = new ArrayList<>();
         list.add(new PlaylistModel(R.drawable.trulyyours, "Truly Yours", "Eric Bellinger"));
         list.add(new PlaylistModel(R.drawable.dollaz_on_my_head, "Dollaz on my head", "Gunna"));
@@ -47,12 +59,13 @@ public class HomeActivity extends AppCompatActivity {
         list.add(new PlaylistModel(R.drawable.mybeat, "My Beat", "Shivam"));
 
         PlaylistAdapter adapter = new PlaylistAdapter(this, list);
-        LinearLayoutManager layoutManager = new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
-        recyclerView.setLayoutManager(layoutManager);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
         recyclerView.setAdapter(adapter);
 
         SnapHelper snapHelper = new PagerSnapHelper();
-        snapHelper.attachToRecyclerView(recyclerView);
+        if (recyclerView.getOnFlingListener() == null) {
+            snapHelper.attachToRecyclerView(recyclerView);
+        }
 
         recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
@@ -63,15 +76,9 @@ public class HomeActivity extends AppCompatActivity {
                     View child = recyclerView.getChildAt(i);
                     int childCenter = (child.getLeft() + child.getRight()) / 2;
                     float distance = Math.abs(center - childCenter);
-
                     float factor = Math.max(0.92f, 1.02f - (distance / center) * 0.15f);
-
                     child.setScaleX(factor);
                     child.setScaleY(factor);
-
-                    float translationY = -((factor - 0.92f) / 0.1f) * 8f;
-                    child.setTranslationY(translationY);
-
                     child.setAlpha(Math.max(0.8f, factor));
                 }
             }
@@ -80,6 +87,8 @@ public class HomeActivity extends AppCompatActivity {
 
     private void setupJamRecycler() {
         RecyclerView recyclerView = findViewById(R.id.jamRecycler);
+        if (recyclerView == null) return;
+
         List<PlaylistModel> list = new ArrayList<>();
         list.add(new PlaylistModel(R.drawable.mybeat, "MY BEAT", "shivam"));
         list.add(new PlaylistModel(R.drawable.trulyyours, "TRULY YOURSS", "ERRIC BELLINGER"));
@@ -87,21 +96,17 @@ public class HomeActivity extends AppCompatActivity {
         PlaylistAdapter adapter = new PlaylistAdapter(this, list);
         recyclerView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
         recyclerView.setAdapter(adapter);
+
         recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
                 super.onScrolled(recyclerView, dx, dy);
-
                 int center = recyclerView.getWidth() / 2;
-
                 for (int i = 0; i < recyclerView.getChildCount(); i++) {
                     View child = recyclerView.getChildAt(i);
-
                     int childCenter = (child.getLeft() + child.getRight()) / 2;
                     float distance = Math.abs(center - childCenter);
-
                     float factor = Math.max(0.95f, 1.02f - (distance / center) * 0.1f);
-
                     child.setScaleX(factor);
                     child.setScaleY(factor);
                     child.setAlpha(Math.max(0.85f, factor));

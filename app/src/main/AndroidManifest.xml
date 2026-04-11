@@ -21,7 +21,14 @@
         <activity android:name=".HomeActivity" />
 
         <activity
+            android:name=".NowPlayingActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".ProfileActivity"
+            android:exported="false" />
+        <activity
+            android:name=".LibraryActivity"
             android:exported="false" />
     </application>
 

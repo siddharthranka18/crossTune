@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="imgAlbum" type="id" />
+    <item name="txtTitle" type="id" />
+    <item name="txtArtist" type="id" />
+</resources>
