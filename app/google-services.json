@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "537066649669",
+    "project_id": "crosstune-0000",
+    "storage_bucket": "crosstune-0000.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:537066649669:android:b49b0af6143ddedf25cb2c",
+        "android_client_info": {
+          "package_name": "com.example.crosstune"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "537066649669-79nldunqf6s86ipvfme6bqjou96905sd.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.crosstune",
+            "certificate_hash": "343f79fbe7ffda2542bb5cc7ef477ab0ee03a2d6"
+          }
+        },
+        {
+          "client_id": "537066649669-6c2l28tka2gcqae6eqaof960ff3qp111.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDULUH-OXoGcBERwwgQkoA5wDFIMwJADsU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "537066649669-6c2l28tka2gcqae6eqaof960ff3qp111.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
