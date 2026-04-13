@@ -85,36 +85,22 @@
                 android:layout_marginTop="20dp"
                 android:textColor="#555555" />
 
-            <!-- Spotify - dark with green border -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnSpotifyDummy"
-                android:layout_width="match_parent"
-                android:layout_height="55dp"
-                android:layout_marginTop="16dp"
-                android:text="Sign in with Spotify"
-                android:textAllCaps="false"
-                android:textColor="#1DB954"
-                app:backgroundTint="#1A1A1A"
-                app:cornerRadius="12dp"
-                app:icon="@drawable/ic_spotify"
-                app:iconGravity="textStart"
-                app:iconTint="@null"
-                app:iconPadding="12dp"
-                app:iconSize="28dp"
-                app:strokeColor="#1DB954"
-                app:strokeWidth="1.5dp" />
-
-            <!-- Google - dark with blue border -->
+            <!-- Google - dark with blue border and logo -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnGoogleSignIn"
                 android:layout_width="match_parent"
                 android:layout_height="55dp"
-                android:layout_marginTop="12dp"
+                android:layout_marginTop="16dp"
                 android:text="Sign in with Google"
                 android:textAllCaps="false"
-                android:textColor="#4285F4"
+                android:textColor="#FFFFFF"
                 app:backgroundTint="#1A1A1A"
                 app:cornerRadius="12dp"
+                app:icon="@drawable/ic_google"
+                app:iconGravity="textStart"
+                app:iconTint="@null"
+                app:iconPadding="12dp"
+                app:iconSize="24dp"
                 app:strokeColor="#4285F4"
                 app:strokeWidth="1.5dp" />
 

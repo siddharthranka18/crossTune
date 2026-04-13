@@ -54,10 +54,6 @@ public class LoginActivity extends AppCompatActivity {
                 startMainActivity("Logged in via Email")
         );
 
-        findViewById(R.id.btnSpotifyDummy).setOnClickListener(v ->
-                startMainActivity("Logged in via Spotify")
-        );
-
         findViewById(R.id.btnGoogleSignIn).setOnClickListener(v -> launchGoogleSignIn());
     }
 

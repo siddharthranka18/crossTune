@@ -79,25 +79,66 @@
             android:orientation="vertical"
             android:padding="20dp">
 
+            <!-- Choose Platform Main Row -->
             <RelativeLayout
+                android:id="@+id/btnChoosePlatform"
                 android:layout_width="match_parent"
-                android:layout_height="60dp">
+                android:layout_height="60dp"
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true">
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_centerVertical="true"
-                    android:text="Your Platform"
+                    android:text="Choose Your Platform"
                     android:textColor="#FFFFFF"
                     android:textSize="16sp" />
                 <ImageView
+                    android:id="@+id/ivPlatformArrow"
                     android:layout_width="24dp"
                     android:layout_height="24dp"
                     android:layout_alignParentEnd="true"
                     android:layout_centerVertical="true"
                     android:src="@drawable/ic_arrow_right"
                     app:tint="#FFFFFF" />
-
             </RelativeLayout>
+
+            <!-- Expanded Platforms Container -->
+            <LinearLayout
+                android:id="@+id/platformOptionsContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone"
+                android:paddingStart="16dp"
+                android:paddingBottom="10dp">
+
+                <RelativeLayout
+                    android:id="@+id/optionSpotify"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true">
+                    <ImageView
+                        android:id="@+id/ivSpotifyLogo"
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:layout_centerVertical="true"
+                        android:src="@drawable/ic_spotify" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_toEndOf="@id/ivSpotifyLogo"
+                        android:layout_marginStart="12dp"
+                        android:layout_centerVertical="true"
+                        android:text="Spotify"
+                        android:textColor="#FFFFFF"
+                        android:textSize="15sp" />
+                </RelativeLayout>
+            </LinearLayout>
+
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="60dp">
@@ -115,8 +156,8 @@
                     android:layout_centerVertical="true"
                     android:src="@drawable/ic_arrow_right"
                     app:tint="#FFFFFF" />
-
             </RelativeLayout>
+
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="60dp">
@@ -134,8 +175,8 @@
                     android:layout_centerVertical="true"
                     android:src="@drawable/ic_arrow_right"
                     app:tint="#FFFFFF" />
-
             </RelativeLayout>
+
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="60dp">
@@ -153,8 +194,8 @@
                     android:layout_centerVertical="true"
                     android:src="@drawable/ic_arrow_right"
                     app:tint="#FFFFFF" />
-
             </RelativeLayout>
+
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="60dp">
@@ -172,8 +213,8 @@
                     android:layout_centerVertical="true"
                     android:src="@drawable/ic_arrow_right"
                     app:tint="#FFFFFF" />
-
             </RelativeLayout>
+
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="60dp">
@@ -191,9 +232,7 @@
                     android:layout_centerVertical="true"
                     android:src="@drawable/ic_arrow_right"
                     app:tint="#FFFFFF" />
-
             </RelativeLayout>
-
 
             <TextView
                 android:id="@+id/btnLogout"
