@@ -35,7 +35,14 @@ public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.ViewHo
         holder.artist.setText(model.artist);
         holder.image.setImageResource(model.image);
 
-        // Ensure the overlay is visible so text is readable
+        // Click on the whole card opens the Playlist detail page
+        holder.itemView.setOnClickListener(v -> {
+            Intent intent = new Intent(context, PlaylistActivity.class);
+            // You can pass playlist data if needed
+            // intent.putExtra("playlist_name", model.title);
+            context.startActivity(intent);
+        });
+
         if (holder.overlay != null) {
             holder.overlay.setVisibility(View.VISIBLE);
         }
@@ -44,12 +51,9 @@ public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.ViewHo
             holder.playButton.setVisibility(View.VISIBLE);
             holder.playButton.bringToFront();
 
+            // Connection to NowPlayingActivity removed as requested
             holder.playButton.setOnClickListener(v -> {
-                Intent intent = new Intent(context, NowPlayingActivity.class);
-                intent.putExtra(NowPlayingActivity.EXTRA_SONG_TITLE, model.title);
-                intent.putExtra(NowPlayingActivity.EXTRA_ARTIST_NAME, model.artist);
-                intent.putExtra(NowPlayingActivity.EXTRA_ALBUM_IMAGE, model.image);
-                context.startActivity(intent);
+                // Currently does nothing or can be used for direct playback toggle
             });
         }
     }
@@ -70,8 +74,6 @@ public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.ViewHo
             title = itemView.findViewById(R.id.playlistTitle);
             artist = itemView.findViewById(R.id.playlistArtist);
             playButton = itemView.findViewById(R.id.playButton);
-
-            // FIXED: ID must match your XML (gradientOverlay)
             overlay = itemView.findViewById(R.id.gradientOverlay);
         }
     }

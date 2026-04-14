@@ -37,12 +37,10 @@ public class HomeActivity extends AppCompatActivity {
         }
 
         // 3. Library Navigation (Fixed ID)
-        // This MUST match the android:id="@+id/btn_library_nav" in activity_home.xml
         ImageView libraryBtn = findViewById(R.id.btn_library_nav);
         if (libraryBtn != null) {
             libraryBtn.setOnClickListener(v -> {
                 Intent intent = new Intent(HomeActivity.this, LibraryActivity.class);
-                // Standard navigation to the separate Library Page
                 startActivity(intent);
             });
         }
@@ -58,6 +56,7 @@ public class HomeActivity extends AppCompatActivity {
         list.add(new PlaylistModel(R.drawable.carsick, "Car sick", "Gunna"));
         list.add(new PlaylistModel(R.drawable.mybeat, "My Beat", "Shivam"));
 
+        // Use standard adapter that navigates to PlaylistActivity
         PlaylistAdapter adapter = new PlaylistAdapter(this, list);
         recyclerView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
         recyclerView.setAdapter(adapter);
@@ -89,11 +88,12 @@ public class HomeActivity extends AppCompatActivity {
         RecyclerView recyclerView = findViewById(R.id.jamRecycler);
         if (recyclerView == null) return;
 
-        List<PlaylistModel> list = new ArrayList<>();
-        list.add(new PlaylistModel(R.drawable.mybeat, "MY BEAT", "shivam"));
-        list.add(new PlaylistModel(R.drawable.trulyyours, "TRULY YOURSS", "ERRIC BELLINGER"));
+        List<JamModel> list = new ArrayList<>();
+        list.add(new JamModel(R.drawable.mybeat, "MY BEAT", "shivam"));
+        list.add(new JamModel(R.drawable.trulyyours, "TRULY YOURSS", "ERRIC BELLINGER"));
 
-        PlaylistAdapter adapter = new PlaylistAdapter(this, list);
+        // Use JamAdapter which does NOT have a click listener to PlaylistActivity
+        JamAdapter adapter = new JamAdapter(this, list);
         recyclerView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
         recyclerView.setAdapter(adapter);
 

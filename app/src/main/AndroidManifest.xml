@@ -25,6 +25,10 @@
             android:exported="false" />
 
         <activity
+            android:name=".PlaylistActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".ProfileActivity"
             android:exported="false" />
         <activity
