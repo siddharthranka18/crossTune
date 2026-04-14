@@ -22,6 +22,14 @@
           }
         },
         {
+          "client_id": "537066649669-rvvvpim4luv7jr58edli8dcedotv04p3.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.crosstune",
+            "certificate_hash": "3e0548b9bd074b7a9a64918fa5a4cfc08810c96f"
+          }
+        },
+        {
           "client_id": "537066649669-6c2l28tka2gcqae6eqaof960ff3qp111.apps.googleusercontent.com",
           "client_type": 3
         }
