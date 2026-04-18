@@ -56,6 +56,7 @@ dependencies {
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
 
+
     // Firebase Authentication and Google Sign-In dependencies
 
     implementation(platform("com.google.firebase:firebase-bom:34.12.0"))
@@ -63,4 +64,5 @@ dependencies {
     implementation("com.google.firebase:firebase-auth")
 
     implementation("com.google.android.gms:play-services-auth:21.5.1")
+    implementation("mysql:mysql-connector-java:8.0.33")
 }

@@ -2,6 +2,7 @@ package com.example.crosstune;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -16,11 +17,18 @@ import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 
 
 
 public class LoginActivity extends AppCompatActivity {
+    private static final String TAG = "LoginActivity";
+    // Direct JDBC drivers are not reliably supported on Android runtime.
+    private static final boolean ENABLE_DIRECT_DB_SYNC = false;
     private GoogleSignInClient googleSignInClient;
     private FirebaseAuth firebaseAuth;
     private String webClientId;
@@ -32,10 +40,13 @@ public class LoginActivity extends AppCompatActivity {
 
         firebaseAuth = FirebaseAuth.getInstance();
 
-        // Skip login screen if user is already authenticated.
-        if (firebaseAuth.getCurrentUser() != null) {
-            startMainActivity("Welcome back");
-            return;
+        // Keep login visible even when a prior Firebase session exists.
+        FirebaseUser existingUser = firebaseAuth.getCurrentUser();
+        if (existingUser != null) {
+            saveUserToDb(existingUser.getDisplayName(), existingUser.getEmail(), () -> {
+                // No auto-navigation here; user stays on login screen until explicit action.
+            });
+            Toast.makeText(this, "Session found. Continue with Google to enter app.", Toast.LENGTH_SHORT).show();
         }
 
         webClientId = getWebClientId();
@@ -79,7 +90,7 @@ public class LoginActivity extends AppCompatActivity {
                         ).show();
                         return;
                     }
-                    firebaseAuthWithGoogle(account.getIdToken());
+                    firebaseAuthWithGoogle(account);
                 } catch (ApiException e) {
                     Toast.makeText(this, "Google sign-in canceled", Toast.LENGTH_SHORT).show();
                 }
@@ -89,16 +100,71 @@ public class LoginActivity extends AppCompatActivity {
         signInLauncher.launch(googleSignInClient.getSignInIntent());
     }
 
-    private void firebaseAuthWithGoogle(String idToken) {
+    private void firebaseAuthWithGoogle(GoogleSignInAccount account) {
+        String idToken = account.getIdToken();
         AuthCredential credential = GoogleAuthProvider.getCredential(idToken, null);
         firebaseAuth.signInWithCredential(credential)
                 .addOnCompleteListener(this, task -> {
                     if (task.isSuccessful()) {
-                        startMainActivity("Logged in via Google");
+                        saveUserToDbAndContinue(account.getDisplayName(), account.getEmail(), "Logged in via Google");
                     } else {
                         Toast.makeText(this, "Firebase auth failed", Toast.LENGTH_SHORT).show();
                     }
                 });
+    }
+
+    private void saveUserToDbAndContinue(String name, String email, String successMessage) {
+        saveUserToDb(name, email, () -> startMainActivity(successMessage));
+    }
+
+    private void saveUserToDb(String name, String email, Runnable onDone) {
+        new Thread(() -> {
+            String errorMessage = null;
+            boolean synced = false;
+
+            try {
+                if (!ENABLE_DIRECT_DB_SYNC) {
+                    errorMessage = "Cloud sync disabled on device build";
+                } else {
+                try (Connection conn = DBConnection.connect()) {
+                    if (conn != null) {
+                    String safeName = (name == null || name.trim().isEmpty()) ? "Test User" : name;
+                    String safeEmail = (email == null || email.trim().isEmpty()) ? "test@gmail.com" : email;
+
+                        String query = "INSERT INTO users (name, email) VALUES (?, ?) " +
+                                "ON DUPLICATE KEY UPDATE name = VALUES(name)";
+
+                        try (PreparedStatement stmt = conn.prepareStatement(query)) {
+                            stmt.setString(1, safeName);
+                            stmt.setString(2, safeEmail);
+                            stmt.executeUpdate();
+                        }
+
+                        synced = true;
+                    } else {
+                        errorMessage = "Connection failed";
+                    }
+                }
+                }
+            } catch (Exception e) {
+                errorMessage = e.getMessage();
+                Log.e(TAG, "Failed to sync user to DB", e);
+            } catch (Throwable t) {
+                errorMessage = "Cloud sync unavailable on this runtime";
+                Log.e(TAG, "JDBC runtime not supported on Android device", t);
+            }
+
+            String finalErrorMessage = errorMessage;
+            boolean finalSynced = synced;
+            runOnUiThread(() -> {
+                if (finalSynced) {
+                    Toast.makeText(this, "User synced to DB", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(this, "DB sync skipped: " + finalErrorMessage, Toast.LENGTH_LONG).show();
+                }
+                onDone.run();
+            });
+        }).start();
     }
 
     private void startMainActivity(String message) {

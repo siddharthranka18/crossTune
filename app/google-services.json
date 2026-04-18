@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "537066649669-1s33euvph0fs1tt6spd9tbjaqhm0qrt5.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.crosstune",
+            "certificate_hash": "5aa1c648ada8d4b797bb499aa37a7fdfb2967d01"
+          }
+        },
+        {
           "client_id": "537066649669-79nldunqf6s86ipvfme6bqjou96905sd.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
