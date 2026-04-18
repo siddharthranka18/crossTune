@@ -5,19 +5,15 @@ import java.sql.DriverManager;
 
 public class DBConnection {
 
-    public static Connection connect() {
-        try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
+    public static Connection connect() throws Exception {
 
-            String url = "jdbc:mysql://monorail.proxy.rlwy.net:17727/railway?useSSL=false&allowPublicKeyRetrieval=true";
-            String user = "root";
-            String pass = "VBaeubHexkotCcePElBAqOqEPHzEBSOP";
+        Class.forName("com.mysql.jdbc.Driver");
 
-            return DriverManager.getConnection(url, user, pass);
+        String url = "jdbc:mysql://monorail.proxy.rlwy.net:17727/railway?useSSL=false";
+        String user = "root";
+        String pass = "VBaeubHexkotCcePElBAqOqEPHzEBSOP";
 
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
+        // If it fails here, it will now throw the exact error to your screen
+        return DriverManager.getConnection(url, user, pass);
     }
 }

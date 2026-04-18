@@ -22,16 +22,16 @@ import com.google.firebase.auth.GoogleAuthProvider;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-
-
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class LoginActivity extends AppCompatActivity {
     private static final String TAG = "LoginActivity";
-    // Direct JDBC drivers are not reliably supported on Android runtime.
-    private static final boolean ENABLE_DIRECT_DB_SYNC = false;
+    private static final boolean ENABLE_DIRECT_DB_SYNC = true; // Prototype mode
+
     private GoogleSignInClient googleSignInClient;
     private FirebaseAuth firebaseAuth;
-    private String webClientId;
+    private final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,40 +40,30 @@ public class LoginActivity extends AppCompatActivity {
 
         firebaseAuth = FirebaseAuth.getInstance();
 
-        // Keep login visible even when a prior Firebase session exists.
+        // Prototype UX: If already logged in, instantly route to Home to show a smooth flow
         FirebaseUser existingUser = firebaseAuth.getCurrentUser();
         if (existingUser != null) {
-            saveUserToDb(existingUser.getDisplayName(), existingUser.getEmail(), () -> {
-                // No auto-navigation here; user stays on login screen until explicit action.
-            });
-            Toast.makeText(this, "Session found. Continue with Google to enter app.", Toast.LENGTH_SHORT).show();
+            saveUserToDbAndContinue(existingUser.getDisplayName(), existingUser.getEmail(), "Welcome back!");
+            return; // Prevent the rest of the UI from initializing unnecessarily
         }
 
-        webClientId = getWebClientId();
+        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestIdToken(getWebClientId())
+                .requestEmail()
+                .build();
 
-        GoogleSignInOptions.Builder gsoBuilder =
-                new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                        .requestEmail();
+        googleSignInClient = GoogleSignIn.getClient(this, gso);
 
-        if (!webClientId.isEmpty()) {
-            gsoBuilder.requestIdToken(webClientId);
-        }
-
-        googleSignInClient = GoogleSignIn.getClient(this, gsoBuilder.build());
-
+        // Placeholder for Email Demo
         findViewById(R.id.btnSignIn).setOnClickListener(v ->
-                startMainActivity("Logged in via Email")
+                startMainActivity("Demo: Logged in via Email")
         );
 
         findViewById(R.id.btnGoogleSignIn).setOnClickListener(v -> launchGoogleSignIn());
     }
 
     private String getWebClientId() {
-        int webClientIdRes = getResources().getIdentifier(
-                "default_web_client_id",
-                "string",
-                getPackageName()
-        );
+        int webClientIdRes = getResources().getIdentifier("default_web_client_id", "string", getPackageName());
         return webClientIdRes == 0 ? "" : getString(webClientIdRes);
     }
 
@@ -82,17 +72,14 @@ public class LoginActivity extends AppCompatActivity {
                 Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(result.getData());
                 try {
                     GoogleSignInAccount account = task.getResult(ApiException.class);
-                    if (account == null || account.getIdToken() == null) {
-                        Toast.makeText(
-                                this,
-                                "Google OAuth not configured in Firebase (missing Web client ID)",
-                                Toast.LENGTH_LONG
-                        ).show();
-                        return;
+                    if (account != null && account.getIdToken() != null) {
+                        firebaseAuthWithGoogle(account);
+                    } else {
+                        Toast.makeText(this, "Configuration error: Missing Web client ID", Toast.LENGTH_LONG).show();
                     }
-                    firebaseAuthWithGoogle(account);
                 } catch (ApiException e) {
-                    Toast.makeText(this, "Google sign-in canceled", Toast.LENGTH_SHORT).show();
+                    Log.e(TAG, "Google sign-in failed", e);
+                    Toast.makeText(this, "Sign-in canceled", Toast.LENGTH_SHORT).show();
                 }
             });
 
@@ -101,75 +88,66 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void firebaseAuthWithGoogle(GoogleSignInAccount account) {
-        String idToken = account.getIdToken();
-        AuthCredential credential = GoogleAuthProvider.getCredential(idToken, null);
+        AuthCredential credential = GoogleAuthProvider.getCredential(account.getIdToken(), null);
         firebaseAuth.signInWithCredential(credential)
                 .addOnCompleteListener(this, task -> {
                     if (task.isSuccessful()) {
-                        saveUserToDbAndContinue(account.getDisplayName(), account.getEmail(), "Logged in via Google");
+                        saveUserToDbAndContinue(account.getDisplayName(), account.getEmail(), "Signed in successfully!");
                     } else {
-                        Toast.makeText(this, "Firebase auth failed", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, "Authentication failed.", Toast.LENGTH_SHORT).show();
                     }
                 });
     }
 
     private void saveUserToDbAndContinue(String name, String email, String successMessage) {
-        saveUserToDb(name, email, () -> startMainActivity(successMessage));
-    }
-
-    private void saveUserToDb(String name, String email, Runnable onDone) {
-        new Thread(() -> {
-            String errorMessage = null;
+        executorService.execute(() -> {
             boolean synced = false;
+            String errorMessage = "";
 
-            try {
-                if (!ENABLE_DIRECT_DB_SYNC) {
-                    errorMessage = "Cloud sync disabled on device build";
-                } else {
+            if (ENABLE_DIRECT_DB_SYNC) {
                 try (Connection conn = DBConnection.connect()) {
                     if (conn != null) {
-                    String safeName = (name == null || name.trim().isEmpty()) ? "Test User" : name;
-                    String safeEmail = (email == null || email.trim().isEmpty()) ? "test@gmail.com" : email;
+                        String safeName = (name == null || name.trim().isEmpty()) ? "Demo User" : name;
+                        String safeEmail = (email == null || email.trim().isEmpty()) ? "demo@crosstune.com" : email;
 
-                        String query = "INSERT INTO users (name, email) VALUES (?, ?) " +
-                                "ON DUPLICATE KEY UPDATE name = VALUES(name)";
-
+                        String query = "INSERT INTO users (name, email) VALUES (?, ?) ON DUPLICATE KEY UPDATE name = VALUES(name)";
                         try (PreparedStatement stmt = conn.prepareStatement(query)) {
                             stmt.setString(1, safeName);
                             stmt.setString(2, safeEmail);
                             stmt.executeUpdate();
+                            synced = true;
                         }
-
-                        synced = true;
                     } else {
-                        errorMessage = "Connection failed";
+                        errorMessage = "Database connection returned null.";
                     }
+                } catch (Exception e) {
+                    errorMessage = e.getMessage();
+                    Log.e(TAG, "Database Sync Error", e);
                 }
-                }
-            } catch (Exception e) {
-                errorMessage = e.getMessage();
-                Log.e(TAG, "Failed to sync user to DB", e);
-            } catch (Throwable t) {
-                errorMessage = "Cloud sync unavailable on this runtime";
-                Log.e(TAG, "JDBC runtime not supported on Android device", t);
             }
 
-            String finalErrorMessage = errorMessage;
+            // Switch back to the main UI thread to navigate and show toasts
             boolean finalSynced = synced;
+            String finalErrorMessage = errorMessage;
+
             runOnUiThread(() -> {
-                if (finalSynced) {
-                    Toast.makeText(this, "User synced to DB", Toast.LENGTH_SHORT).show();
-                } else {
-                    Toast.makeText(this, "DB sync skipped: " + finalErrorMessage, Toast.LENGTH_LONG).show();
+                if (ENABLE_DIRECT_DB_SYNC && !finalSynced) {
+                    Toast.makeText(this, "Demo DB sync failed: " + finalErrorMessage, Toast.LENGTH_SHORT).show();
                 }
-                onDone.run();
+                startMainActivity(successMessage);
             });
-        }).start();
+        });
     }
 
     private void startMainActivity(String message) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
         startActivity(new Intent(this, HomeActivity.class));
-        finish();
+        finish(); // Remove LoginActivity from the back stack so the user can't hit 'back' to return to it
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        executorService.shutdown(); // Clean up threads
     }
 }
