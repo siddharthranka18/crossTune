@@ -11,11 +11,15 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.auth.FirebaseAuth;
+import com.spotify.sdk.android.auth.AuthorizationRequest;
+import com.spotify.sdk.android.auth.AuthorizationResponse;
 
 public class ProfileActivity extends AppCompatActivity {
 
     private boolean isPlatformExpanded = false;
-
+    private String CLIENT_ID = "c2eb5a6730aa447f9972ae85006f5981";
+    private String CLIENT_SECRET = "9d09837f5fd44e8ba4168169006df5e6";
+    private static final String REDIRECT_URI = "http://127.0.0.1:8888/callback";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -54,7 +58,8 @@ public class ProfileActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Toast.makeText(ProfileActivity.this, "Spotify Selected", Toast.LENGTH_SHORT).show();
-                // Add your Spotify integration logic here
+                AuthorizationRequest.Builder builder = new AuthorizationRequest.Builder(CLIENT_ID, AuthorizationResponse.Type.TOKEN, REDIRECT_URI);
+                builder.setScopes(new String[]{"user-read-private", "playlist-modify-public", "playlist-modify-private"});
             }
         });
 
