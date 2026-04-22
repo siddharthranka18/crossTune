@@ -11,7 +11,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import java.util.List;
 
-public class JamAdapter extends RecyclerView.Adapter<JamAdapter.ViewHolder> {
+public class        JamAdapter extends RecyclerView.Adapter<JamAdapter.ViewHolder> {
 
     Context context;
     List<JamModel> list;

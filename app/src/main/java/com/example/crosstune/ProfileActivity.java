@@ -11,6 +11,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.auth.FirebaseAuth;
+import com.spotify.sdk.android.auth.AuthorizationClient;
 import com.spotify.sdk.android.auth.AuthorizationRequest;
 import com.spotify.sdk.android.auth.AuthorizationResponse;
 
@@ -20,6 +21,27 @@ public class ProfileActivity extends AppCompatActivity {
     private String CLIENT_ID = "c2eb5a6730aa447f9972ae85006f5981";
     private String CLIENT_SECRET = "9d09837f5fd44e8ba4168169006df5e6";
     private static final String REDIRECT_URI = "http://127.0.0.1:8888/callback";
+    private static final int REQUEST_CODE = 1337; // Just a random ID number
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
+        super.onActivityResult(requestCode, resultCode, intent);
+
+        if (requestCode == REQUEST_CODE) {
+            AuthorizationResponse response = AuthorizationClient.getResponse(resultCode, intent);
+
+            switch (response.getType()) {
+                case TOKEN:
+                    // SUCCESS! You now have the "Access Token"
+                    String token = response.getAccessToken();
+                    System.out.println("Got the token: " + token);
+                    break;
+
+                case ERROR:
+                    // Something went wrong (check your SHA-1 or Redirect URI)
+                    break;
+            }
+        }
+    }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -59,7 +81,9 @@ public class ProfileActivity extends AppCompatActivity {
             public void onClick(View v) {
                 Toast.makeText(ProfileActivity.this, "Spotify Selected", Toast.LENGTH_SHORT).show();
                 AuthorizationRequest.Builder builder = new AuthorizationRequest.Builder(CLIENT_ID, AuthorizationResponse.Type.TOKEN, REDIRECT_URI);
-                builder.setScopes(new String[]{"user-read-private", "playlist-modify-public", "playlist-modify-private"});
+                builder.setScopes(new String[]{"user-read-private", "playlist-modify-public", "playlist-modify-private", "user-modify-playback-state"});
+                AuthorizationRequest request = builder.build();
+                AuthorizationClient.openLoginActivity(ProfileActivity.this, REQUEST_CODE, request);
             }
         });
 
