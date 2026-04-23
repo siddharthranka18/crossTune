@@ -43,8 +43,9 @@ public class LoginActivity extends AppCompatActivity {
         // Prototype UX: If already logged in, instantly route to Home to show a smooth flow
         FirebaseUser existingUser = firebaseAuth.getCurrentUser();
         if (existingUser != null) {
-            saveUserToDbAndContinue(existingUser.getDisplayName(), existingUser.getEmail(), "Welcome back!");
-            return; // Prevent the rest of the UI from initializing unnecessarily
+            startMainActivity("Welcome back!");
+            syncUserToDbInBackground(existingUser.getDisplayName(), existingUser.getEmail());
+            return;
         }
 
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
@@ -92,62 +93,46 @@ public class LoginActivity extends AppCompatActivity {
         firebaseAuth.signInWithCredential(credential)
                 .addOnCompleteListener(this, task -> {
                     if (task.isSuccessful()) {
-                        saveUserToDbAndContinue(account.getDisplayName(), account.getEmail(), "Signed in successfully!");
+                        startMainActivity("Signed in successfully!");
+                        syncUserToDbInBackground(account.getDisplayName(), account.getEmail());
                     } else {
                         Toast.makeText(this, "Authentication failed.", Toast.LENGTH_SHORT).show();
                     }
                 });
     }
 
-    private void saveUserToDbAndContinue(String name, String email, String successMessage) {
+    private void syncUserToDbInBackground(String name, String email) {
+        if (!ENABLE_DIRECT_DB_SYNC) return;
+
         executorService.execute(() -> {
-            boolean synced = false;
-            String errorMessage = "";
+            try (Connection conn = DBConnection.connect()) {
+                if (conn != null) {
+                    String safeName = (name == null || name.trim().isEmpty()) ? "Demo User" : name;
+                    String safeEmail = (email == null || email.trim().isEmpty()) ? "demo@crosstune.com" : email;
 
-            if (ENABLE_DIRECT_DB_SYNC) {
-                try (Connection conn = DBConnection.connect()) {
-                    if (conn != null) {
-                        String safeName = (name == null || name.trim().isEmpty()) ? "Demo User" : name;
-                        String safeEmail = (email == null || email.trim().isEmpty()) ? "demo@crosstune.com" : email;
-
-                        String query = "INSERT INTO users (name, email) VALUES (?, ?) ON DUPLICATE KEY UPDATE name = VALUES(name)";
-                        try (PreparedStatement stmt = conn.prepareStatement(query)) {
-                            stmt.setString(1, safeName);
-                            stmt.setString(2, safeEmail);
-                            stmt.executeUpdate();
-                            synced = true;
-                        }
-                    } else {
-                        errorMessage = "Database connection returned null.";
+                    String query = "INSERT INTO users (name, email) VALUES (?, ?) ON DUPLICATE KEY UPDATE name = VALUES(name)";
+                    try (PreparedStatement stmt = conn.prepareStatement(query)) {
+                        stmt.setString(1, safeName);
+                        stmt.setString(2, safeEmail);
+                        stmt.executeUpdate();
+                        Log.d(TAG, "Background Sync: User info updated in DB.");
                     }
-                } catch (Exception e) {
-                    errorMessage = e.getMessage();
-                    Log.e(TAG, "Database Sync Error", e);
                 }
+            } catch (Exception e) {
+                Log.e(TAG, "Background Database Sync Error: " + e.getMessage());
             }
-
-            // Switch back to the main UI thread to navigate and show toasts
-            boolean finalSynced = synced;
-            String finalErrorMessage = errorMessage;
-
-            runOnUiThread(() -> {
-                if (ENABLE_DIRECT_DB_SYNC && !finalSynced) {
-                    Toast.makeText(this, "Demo DB sync failed: " + finalErrorMessage, Toast.LENGTH_SHORT).show();
-                }
-                startMainActivity(successMessage);
-            });
         });
     }
 
     private void startMainActivity(String message) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
         startActivity(new Intent(this, HomeActivity.class));
-        finish(); // Remove LoginActivity from the back stack so the user can't hit 'back' to return to it
+        finish();
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        executorService.shutdown(); // Clean up threads
+        executorService.shutdown();
     }
 }
