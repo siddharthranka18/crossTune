@@ -28,7 +28,7 @@ import java.util.concurrent.Executors;
 
 public class LoginActivity extends AppCompatActivity {
     private static final String TAG = "LoginActivity";
-    private static final boolean ENABLE_DIRECT_DB_SYNC = true; // Prototype mode
+    private static final boolean ENABLE_DIRECT_DB_SYNC = true;
 
     private GoogleSignInClient googleSignInClient;
     private FirebaseAuth firebaseAuth;
@@ -43,7 +43,6 @@ public class LoginActivity extends AppCompatActivity {
         firebaseAuth = FirebaseAuth.getInstance();
         sessionManager = new SessionManager(this);
 
-        // Prototype UX: If already logged in, instantly route to Home to show a smooth flow
         FirebaseUser existingUser = firebaseAuth.getCurrentUser();
         if (existingUser != null) {
             sessionManager.saveGoogleUser(existingUser.getDisplayName(), existingUser.getEmail(), existingUser.getUid());
@@ -58,22 +57,44 @@ public class LoginActivity extends AppCompatActivity {
                 .build();
 
         googleSignInClient = GoogleSignIn.getClient(this, gso);
+
         EditText emailField = findViewById(R.id.uid);
         EditText passwordField = findViewById(R.id.pid);
-        // Placeholder for Email Demo
-        findViewById(R.id.btnSignIn).setOnClickListener(v ->{
-                String email = emailField.getText().toString().trim();
-                String password = passwordField.getText().toString().trim();
 
-        if (email.isEmpty() || password.isEmpty()) {
-            Toast.makeText(this, "Please fill in all fields", Toast.LENGTH_SHORT).show();
-        } else {
-            syncUserToDbInBackground(email, password);
-        }
-    });
+        // Sign In Button - Verifies with Firebase
+        findViewById(R.id.btnSignIn).setOnClickListener(v -> {
+            String email = emailField.getText().toString().trim();
+            String password = passwordField.getText().toString().trim();
+
+            if (email.isEmpty() || password.isEmpty()) {
+                Toast.makeText(this, "Please enter email and password", Toast.LENGTH_SHORT).show();
+            } else {
+                signInWithEmail(email, password);
+            }
+        });
+
+        // Go to Sign Up Page
+        findViewById(R.id.btnGoToSignUp).setOnClickListener(v -> {
+            startActivity(new Intent(LoginActivity.this, SignUpActivity.class));
+        });
 
         findViewById(R.id.btnGoogleSignIn).setOnClickListener(v -> launchGoogleSignIn());
+    }
 
+    private void signInWithEmail(String email, String password) {
+        firebaseAuth.signInWithEmailAndPassword(email, password)
+                .addOnCompleteListener(this, task -> {
+                    if (task.isSuccessful()) {
+                        FirebaseUser user = firebaseAuth.getCurrentUser();
+                        if (user != null) {
+                            sessionManager.saveGoogleUser(user.getDisplayName(), user.getEmail(), user.getUid());
+                            syncUserToDbInBackground(user.getDisplayName(), user.getEmail());
+                        }
+                        startMainActivity("Signed in successfully!");
+                    } else {
+                        Toast.makeText(this, "Login Failed: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
     private String getWebClientId() {
@@ -109,8 +130,6 @@ public class LoginActivity extends AppCompatActivity {
                         FirebaseUser user = firebaseAuth.getCurrentUser();
                         if (user != null) {
                             sessionManager.saveGoogleUser(user.getDisplayName(), user.getEmail(), user.getUid());
-                        } else {
-                            sessionManager.saveGoogleUser(account.getDisplayName(), account.getEmail(), account.getId());
                         }
                         startMainActivity("Signed in successfully!");
                         syncUserToDbInBackground(account.getDisplayName(), account.getEmail());
@@ -126,19 +145,18 @@ public class LoginActivity extends AppCompatActivity {
         executorService.execute(() -> {
             try (Connection conn = DBConnection.connect()) {
                 if (conn != null) {
-                    String safeName = (name == null || name.trim().isEmpty()) ? "Demo User" : name;
-                    String safeEmail = (email == null || email.trim().isEmpty()) ? "demo@crosstune.com" : email;
+                    String safeName = (name == null || name.trim().isEmpty()) ? "User" : name;
+                    String safeEmail = (email == null || email.trim().isEmpty()) ? "user@crosstune.com" : email;
 
                     String query = "INSERT INTO users (name, email) VALUES (?, ?) ON DUPLICATE KEY UPDATE name = VALUES(name)";
                     try (PreparedStatement stmt = conn.prepareStatement(query)) {
                         stmt.setString(1, safeName);
                         stmt.setString(2, safeEmail);
                         stmt.executeUpdate();
-                        Log.d(TAG, "Background Sync: User info updated in DB.");
                     }
                 }
             } catch (Exception e) {
-                Log.e(TAG, "Background Database Sync Error: " + e.getMessage());
+                Log.e(TAG, "Sync Error: " + e.getMessage());
             }
         });
     }
