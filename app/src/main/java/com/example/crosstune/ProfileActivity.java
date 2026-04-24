@@ -28,7 +28,6 @@ public class ProfileActivity extends AppCompatActivity {
     private static final String REDIRECT_URI = "http://127.0.0.1:8888/callback";
     private static final int REQUEST_CODE = 1337; // Just a random ID number
 
-    private SessionManager sessionManager;
     private TextView profileNameView;
     private TextView profileEmailView;
 
@@ -43,9 +42,10 @@ public class ProfileActivity extends AppCompatActivity {
                 case TOKEN:
                     // SUCCESS! You now have the "Access Token"
                     String token = response.getAccessToken();
-                    sessionManager.saveSpotifyToken(token, response.getExpiresIn());
-                    refreshProfileUiFromSession();
+                    AppState.sessionManager.saveSpotifyToken(token, response.getExpiresIn());
+                    //refreshProfileUiFromSession();
                     Toast.makeText(this, "Spotify connected", Toast.LENGTH_SHORT).show();
+                    AppState.isPlaylistDataFetched = true;
                     break;
 
                 case ERROR:
@@ -65,11 +65,12 @@ public class ProfileActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_profile);
+        AppState.init(this);
 
-        sessionManager = new SessionManager(this);
+        AppState.sessionManager = new SessionManager(this);
         profileNameView = findViewById(R.id.profile_name);
         profileEmailView = findViewById(R.id.profile_email);
-        refreshProfileUiFromSession();
+        //refreshProfileUiFromSession();
 
         // 1. Back Button Logic
         ImageView btnBack = findViewById(R.id.btnBack);
@@ -103,9 +104,28 @@ public class ProfileActivity extends AppCompatActivity {
         optionSpotify.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Toast.makeText(ProfileActivity.this, "Spotify Selected", Toast.LENGTH_SHORT).show();
-                AuthorizationRequest.Builder builder = new AuthorizationRequest.Builder(CLIENT_ID, AuthorizationResponse.Type.TOKEN, REDIRECT_URI);
-                builder.setScopes(new String[]{"user-read-private", "playlist-modify-public", "playlist-modify-private", "user-modify-playback-state"});
+                Toast.makeText(ProfileActivity.this, "Connecting to Spotify...", Toast.LENGTH_SHORT).show();
+
+                AuthorizationRequest.Builder builder = new AuthorizationRequest.Builder(
+                        CLIENT_ID,
+                        AuthorizationResponse.Type.TOKEN,
+                        REDIRECT_URI
+                );
+
+                // This is the magic line that forces the login/consent screen every time
+                builder.setShowDialog(true);
+
+                // Updated scopes: added playlist-read-private and playlist-read-collaborative
+                // so our HomeActivity fetch function actually works!
+                builder.setScopes(new String[]{
+                        "user-read-private",
+                        "playlist-read-private",
+                        "playlist-read-collaborative",
+                        "playlist-modify-public",
+                        "playlist-modify-private",
+                        "user-modify-playback-state"
+                });
+
                 AuthorizationRequest request = builder.build();
                 AuthorizationClient.openLoginActivity(ProfileActivity.this, REQUEST_CODE, request);
             }
@@ -125,7 +145,7 @@ public class ProfileActivity extends AppCompatActivity {
                 GoogleSignInClient googleSignInClient = GoogleSignIn.getClient(ProfileActivity.this, gso);
                 
                 googleSignInClient.signOut().addOnCompleteListener(task -> {
-                    sessionManager.clearAll();
+                    AppState.sessionManager.clearAll();
                     Toast.makeText(ProfileActivity.this, "LOGGED OUT SUCCESSFULLY", Toast.LENGTH_SHORT).show();
                     Intent intent = new Intent(ProfileActivity.this, LoginActivity.class);
                     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
@@ -136,19 +156,19 @@ public class ProfileActivity extends AppCompatActivity {
         });
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        refreshProfileUiFromSession();
-    }
-
-    private void refreshProfileUiFromSession() {
-        SessionManager.ProfileUiState uiState = sessionManager.getProfileUiState();
-        profileNameView.setText(uiState.name);
-        String emailLabel = uiState.email;
-        if (uiState.spotifyConnected) {
-            emailLabel = emailLabel + "  (Spotify Connected)";
-        }
-        profileEmailView.setText(emailLabel);
-    }
+//    @Override
+//    protected void onResume() {
+//        super.onResume();
+//        refreshProfileUiFromSession();
+//    }
+//
+//    private void refreshProfileUiFromSession() {
+//        AppState.sessionManager.ProfileUiState uiState = AppState.sessionManager.getProfileUiState();
+//        profileNameView.setText(uiState.name);
+//        String emailLabel = uiState.email;
+//        if (uiState.spotifyConnected) {
+//            emailLabel = emailLabel + "  (Spotify Connected)";
+//        }
+//        profileEmailView.setText(emailLabel);
+//    }
 }

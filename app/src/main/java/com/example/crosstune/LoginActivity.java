@@ -32,20 +32,20 @@ public class LoginActivity extends AppCompatActivity {
 
     private GoogleSignInClient googleSignInClient;
     private FirebaseAuth firebaseAuth;
-    private SessionManager sessionManager;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
+        AppState.init(this);
 
         firebaseAuth = FirebaseAuth.getInstance();
-        sessionManager = new SessionManager(this);
+        AppState.sessionManager = new SessionManager(this);
 
         FirebaseUser existingUser = firebaseAuth.getCurrentUser();
         if (existingUser != null) {
-            sessionManager.saveGoogleUser(existingUser.getDisplayName(), existingUser.getEmail(), existingUser.getUid());
+            AppState.sessionManager.saveGoogleUser(existingUser.getDisplayName(), existingUser.getEmail(), existingUser.getUid());
             startMainActivity("Welcome back!");
             syncUserToDbInBackground(existingUser.getDisplayName(), existingUser.getEmail());
             return;
@@ -87,7 +87,7 @@ public class LoginActivity extends AppCompatActivity {
                     if (task.isSuccessful()) {
                         FirebaseUser user = firebaseAuth.getCurrentUser();
                         if (user != null) {
-                            sessionManager.saveGoogleUser(user.getDisplayName(), user.getEmail(), user.getUid());
+                            AppState.sessionManager.saveGoogleUser(user.getDisplayName(), user.getEmail(), user.getUid());
                             syncUserToDbInBackground(user.getDisplayName(), user.getEmail());
                         }
                         startMainActivity("Signed in successfully!");
@@ -129,7 +129,7 @@ public class LoginActivity extends AppCompatActivity {
                     if (task.isSuccessful()) {
                         FirebaseUser user = firebaseAuth.getCurrentUser();
                         if (user != null) {
-                            sessionManager.saveGoogleUser(user.getDisplayName(), user.getEmail(), user.getUid());
+                            AppState.sessionManager.saveGoogleUser(user.getDisplayName(), user.getEmail(), user.getUid());
                         }
                         startMainActivity("Signed in successfully!");
                         syncUserToDbInBackground(account.getDisplayName(), account.getEmail());

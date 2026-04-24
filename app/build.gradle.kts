@@ -47,9 +47,13 @@ dependencies {
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.activity)
+    implementation("com.github.bumptech.glide:glide:4.16.0")
+    annotationProcessor("com.github.bumptech.glide:compiler:4.16.0")
     implementation(libs.constraintlayout)
+    implementation("com.github.bumptech.glide:glide:4.16.0")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.google.android.material:material:1.12.0")
+
 // Spotify Auth SDK (Replace with latest version if prompted)
     implementation("com.spotify.android:auth:2.1.0")
 // For handling the "Glassmorphism" blur on Android 12+
