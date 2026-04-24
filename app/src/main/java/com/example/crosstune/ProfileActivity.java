@@ -2,6 +2,7 @@ package com.example.crosstune;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -19,12 +20,18 @@ import com.spotify.sdk.android.auth.AuthorizationRequest;
 import com.spotify.sdk.android.auth.AuthorizationResponse;
 
 public class ProfileActivity extends AppCompatActivity {
+    private static final String TAG = "ProfileActivity";
 
     private boolean isPlatformExpanded = false;
     private String CLIENT_ID = "c2eb5a6730aa447f9972ae85006f5981";
     private String CLIENT_SECRET = "9d09837f5fd44e8ba4168169006df5e6";
     private static final String REDIRECT_URI = "http://127.0.0.1:8888/callback";
     private static final int REQUEST_CODE = 1337; // Just a random ID number
+
+    private SessionManager sessionManager;
+    private TextView profileNameView;
+    private TextView profileEmailView;
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
         super.onActivityResult(requestCode, resultCode, intent);
@@ -36,19 +43,33 @@ public class ProfileActivity extends AppCompatActivity {
                 case TOKEN:
                     // SUCCESS! You now have the "Access Token"
                     String token = response.getAccessToken();
-                    System.out.println("Got the token: " + token);
+                    sessionManager.saveSpotifyToken(token, response.getExpiresIn());
+                    refreshProfileUiFromSession();
+                    Toast.makeText(this, "Spotify connected", Toast.LENGTH_SHORT).show();
                     break;
 
                 case ERROR:
                     // Something went wrong (check your SHA-1 or Redirect URI)
+                    Log.e(TAG, "Spotify auth failed: " + response.getError());
+                    Toast.makeText(this, "Spotify connection failed", Toast.LENGTH_SHORT).show();
+                    break;
+
+                default:
+                    Log.d(TAG, "Spotify auth canceled or unknown state: " + response.getType());
                     break;
             }
         }
     }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_profile);
+
+        sessionManager = new SessionManager(this);
+        profileNameView = findViewById(R.id.profile_name);
+        profileEmailView = findViewById(R.id.profile_email);
+        refreshProfileUiFromSession();
 
         // 1. Back Button Logic
         ImageView btnBack = findViewById(R.id.btnBack);
@@ -104,6 +125,7 @@ public class ProfileActivity extends AppCompatActivity {
                 GoogleSignInClient googleSignInClient = GoogleSignIn.getClient(ProfileActivity.this, gso);
                 
                 googleSignInClient.signOut().addOnCompleteListener(task -> {
+                    sessionManager.clearAll();
                     Toast.makeText(ProfileActivity.this, "LOGGED OUT SUCCESSFULLY", Toast.LENGTH_SHORT).show();
                     Intent intent = new Intent(ProfileActivity.this, LoginActivity.class);
                     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
@@ -112,5 +134,21 @@ public class ProfileActivity extends AppCompatActivity {
                 });
             }
         });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        refreshProfileUiFromSession();
+    }
+
+    private void refreshProfileUiFromSession() {
+        SessionManager.ProfileUiState uiState = sessionManager.getProfileUiState();
+        profileNameView.setText(uiState.name);
+        String emailLabel = uiState.email;
+        if (uiState.spotifyConnected) {
+            emailLabel = emailLabel + "  (Spotify Connected)";
+        }
+        profileEmailView.setText(emailLabel);
     }
 }

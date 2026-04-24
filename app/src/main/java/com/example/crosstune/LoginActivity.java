@@ -32,6 +32,7 @@ public class LoginActivity extends AppCompatActivity {
 
     private GoogleSignInClient googleSignInClient;
     private FirebaseAuth firebaseAuth;
+    private SessionManager sessionManager;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     @Override
@@ -40,10 +41,12 @@ public class LoginActivity extends AppCompatActivity {
         setContentView(R.layout.activity_login);
 
         firebaseAuth = FirebaseAuth.getInstance();
+        sessionManager = new SessionManager(this);
 
         // Prototype UX: If already logged in, instantly route to Home to show a smooth flow
         FirebaseUser existingUser = firebaseAuth.getCurrentUser();
         if (existingUser != null) {
+            sessionManager.saveGoogleUser(existingUser.getDisplayName(), existingUser.getEmail(), existingUser.getUid());
             startMainActivity("Welcome back!");
             syncUserToDbInBackground(existingUser.getDisplayName(), existingUser.getEmail());
             return;
@@ -103,6 +106,12 @@ public class LoginActivity extends AppCompatActivity {
         firebaseAuth.signInWithCredential(credential)
                 .addOnCompleteListener(this, task -> {
                     if (task.isSuccessful()) {
+                        FirebaseUser user = firebaseAuth.getCurrentUser();
+                        if (user != null) {
+                            sessionManager.saveGoogleUser(user.getDisplayName(), user.getEmail(), user.getUid());
+                        } else {
+                            sessionManager.saveGoogleUser(account.getDisplayName(), account.getEmail(), account.getId());
+                        }
                         startMainActivity("Signed in successfully!");
                         syncUserToDbInBackground(account.getDisplayName(), account.getEmail());
                     } else {
