@@ -3,6 +3,7 @@ package com.example.crosstune;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -54,13 +55,22 @@ public class LoginActivity extends AppCompatActivity {
                 .build();
 
         googleSignInClient = GoogleSignIn.getClient(this, gso);
-
+        EditText emailField = findViewById(R.id.uid);
+        EditText passwordField = findViewById(R.id.pid);
         // Placeholder for Email Demo
-        findViewById(R.id.btnSignIn).setOnClickListener(v ->
-                startMainActivity("Demo: Logged in via Email")
-        );
+        findViewById(R.id.btnSignIn).setOnClickListener(v ->{
+                String email = emailField.getText().toString().trim();
+                String password = passwordField.getText().toString().trim();
+
+        if (email.isEmpty() || password.isEmpty()) {
+            Toast.makeText(this, "Please fill in all fields", Toast.LENGTH_SHORT).show();
+        } else {
+            syncUserToDbInBackground(email, password);
+        }
+    });
 
         findViewById(R.id.btnGoogleSignIn).setOnClickListener(v -> launchGoogleSignIn());
+
     }
 
     private String getWebClientId() {

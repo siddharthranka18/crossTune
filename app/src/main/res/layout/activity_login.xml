@@ -45,25 +45,27 @@
             <View android:layout_width="match_parent" android:layout_height="32dp"/>
 
             <EditText
+                android:id="@+id/uid"
                 android:layout_width="match_parent"
                 android:layout_height="55dp"
+                android:background="@android:drawable/editbox_background_normal"
                 android:hint="Username"
                 android:padding="12dp"
                 android:textColor="#FFFFFF"
-                android:textColorHint="#555555"
-                android:background="@android:drawable/editbox_background_normal"/>
+                android:textColorHint="#555555" />
 
             <View android:layout_width="match_parent" android:layout_height="12dp"/>
 
             <EditText
+                android:id="@+id/pid"
                 android:layout_width="match_parent"
                 android:layout_height="55dp"
+                android:background="@android:drawable/editbox_background_normal"
                 android:hint="Password"
                 android:inputType="textPassword"
                 android:padding="12dp"
                 android:textColor="#FFFFFF"
-                android:textColorHint="#555555"
-                android:background="@android:drawable/editbox_background_normal"/>
+                android:textColorHint="#555555" />
 
             <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/btnSignIn"
