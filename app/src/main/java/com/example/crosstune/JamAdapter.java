@@ -1,17 +1,17 @@
 package com.example.crosstune;
 
 import android.content.Context;
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast; // Added for the click test
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import java.util.List;
 
-public class        JamAdapter extends RecyclerView.Adapter<JamAdapter.ViewHolder> {
+public class JamAdapter extends RecyclerView.Adapter<JamAdapter.ViewHolder> {
 
     Context context;
     List<JamModel> list;
@@ -37,9 +37,13 @@ public class        JamAdapter extends RecyclerView.Adapter<JamAdapter.ViewHolde
         holder.title.setText(model.title);
         holder.artist.setText(model.artist);
 
-        // --- ADDED: Click Listener for the Play Button ---
-        holder.playButton.setOnClickListener(v -> {
-            Toast.makeText(context, "Playing: " + model.title, Toast.LENGTH_SHORT).show();
+        // --- UPDATED: Click Listener to open JamDetailActivity ---
+        holder.itemView.setOnClickListener(v -> {
+            Intent intent = new Intent(context, JamDetailActivity.class);
+            intent.putExtra("jam_title", model.title);
+            intent.putExtra("jam_artist", model.artist);
+            intent.putExtra("jam_image", model.image);
+            context.startActivity(intent);
         });
     }
 
@@ -50,7 +54,7 @@ public class        JamAdapter extends RecyclerView.Adapter<JamAdapter.ViewHolde
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
 
-        ImageView image, playButton; // --- UPDATED: Added playButton here ---
+        ImageView image, playButton;
         TextView title, artist;
 
         public ViewHolder(@NonNull View itemView) {
@@ -59,7 +63,6 @@ public class        JamAdapter extends RecyclerView.Adapter<JamAdapter.ViewHolde
             image = itemView.findViewById(R.id.playlistImage);
             title = itemView.findViewById(R.id.playlistTitle);
             artist = itemView.findViewById(R.id.playlistArtist);
-            // --- UPDATED: Linked the playButton ID ---
             playButton = itemView.findViewById(R.id.playButton);
         }
     }

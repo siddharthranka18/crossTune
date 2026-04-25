@@ -16,6 +16,7 @@
             app:layout_scrollFlags="scroll|exitUntilCollapsed">
 
             <ImageView
+                android:id="@+id/playlistHeroImage"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:scaleType="centerCrop"
@@ -38,16 +39,6 @@
                     android:layout_marginTop="32dp"
                     android:src="@drawable/ic_back"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:tint="#FFFFFF" />
-
-                <ImageView
-                    android:layout_width="28dp"
-                    android:layout_height="28dp"
-                    android:layout_marginTop="32dp"
-                    android:rotation="90"
-                    android:src="@drawable/ic_compass"
-                    app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintTop_toTopOf="parent"
                     app:tint="#FFFFFF" />
 
@@ -110,7 +101,6 @@
             android:paddingBottom="180dp">
 
             <!-- Song list items... -->
-            <!-- Song 1 -->
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="80dp"
@@ -154,246 +144,8 @@
                     android:textColor="#808080"
                     android:textSize="12sp" />
             </RelativeLayout>
-            <!-- Song 2 -->
-            <RelativeLayout
-                android:layout_width="match_parent"
-                android:layout_height="80dp"
-                android:paddingStart="20dp"
-                android:paddingEnd="20dp">
-                <com.google.android.material.imageview.ShapeableImageView
-                    android:id="@+id/img2"
-                    android:layout_width="56dp"
-                    android:layout_height="56dp"
-                    android:layout_centerVertical="true"
-                    android:scaleType="centerCrop"
-                    android:src="@drawable/two_am"
-                    app:shapeAppearanceOverlay="@style/RoundedImage8" />
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_centerVertical="true"
-                    android:layout_marginStart="16dp"
-                    android:layout_toEndOf="@id/img2"
-                    android:orientation="vertical">
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="2 AM"
-                        android:textColor="#FFFFFF"
-                        android:textSize="16sp"
-                        android:textStyle="bold" />
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Arizona Zervas"
-                        android:textColor="#808080"
-                        android:textSize="13sp" />
-                </LinearLayout>
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_alignParentEnd="true"
-                    android:layout_centerVertical="true"
-                    android:text="2:50"
-                    android:textColor="#808080"
-                    android:textSize="12sp" />
-            </RelativeLayout>
-            <!-- Song 3 -->
-            <RelativeLayout
-                android:layout_width="match_parent"
-                android:layout_height="80dp"
-                android:paddingStart="20dp"
-                android:paddingEnd="20dp">
-                <com.google.android.material.imageview.ShapeableImageView
-                    android:id="@+id/img3"
-                    android:layout_width="56dp"
-                    android:layout_height="56dp"
-                    android:layout_centerVertical="true"
-                    android:scaleType="centerCrop"
-                    android:src="@drawable/baddest"
-                    app:shapeAppearanceOverlay="@style/RoundedImage8" />
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_centerVertical="true"
-                    android:layout_marginStart="16dp"
-                    android:layout_toEndOf="@id/img3"
-                    android:orientation="vertical">
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Baddest"
-                        android:textColor="#FFFFFF"
-                        android:textSize="16sp"
-                        android:textStyle="bold" />
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="2 Chainz, Chris Brown"
-                        android:textColor="#808080"
-                        android:textSize="13sp" />
-                </LinearLayout>
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_alignParentEnd="true"
-                    android:layout_centerVertical="true"
-                    android:text="3:45"
-                    android:textColor="#808080"
-                    android:textSize="12sp" />
-            </RelativeLayout>
-            <!-- Song 4 -->
-            <RelativeLayout
-                android:layout_width="match_parent"
-                android:layout_height="80dp"
-                android:paddingStart="20dp"
-                android:paddingEnd="20dp">
-                <com.google.android.material.imageview.ShapeableImageView
-                    android:id="@+id/img4"
-                    android:layout_width="56dp"
-                    android:layout_height="56dp"
-                    android:layout_centerVertical="true"
-                    android:scaleType="centerCrop"
-                    android:src="@drawable/true_love"
-                    app:shapeAppearanceOverlay="@style/RoundedImage8" />
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_centerVertical="true"
-                    android:layout_marginStart="16dp"
-                    android:layout_toEndOf="@id/img4"
-                    android:orientation="vertical">
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="True Love"
-                        android:textColor="#FFFFFF"
-                        android:textSize="16sp"
-                        android:textStyle="bold" />
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Kanye West"
-                        android:textColor="#808080"
-                        android:textSize="13sp" />
-                </LinearLayout>
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_alignParentEnd="true"
-                    android:layout_centerVertical="true"
-                    android:text="3:30"
-                    android:textColor="#808080"
-                    android:textSize="12sp" />
-            </RelativeLayout>
+            <!-- More static songs here... -->
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
-
-    <!-- Container for Player and Nav -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom"
-        android:background="#000000"
-        android:orientation="vertical">
-
-        <!-- Mini Player -->
-        <androidx.cardview.widget.CardView
-            android:layout_width="match_parent"
-            android:layout_height="80dp"
-            android:layout_marginStart="12dp"
-            android:layout_marginEnd="12dp"
-            android:layout_marginBottom="12dp"
-            app:cardBackgroundColor="#0D111A"
-            app:cardCornerRadius="18dp"
-            app:cardElevation="0dp">
-
-            <RelativeLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:padding="8dp">
-
-                <com.google.android.material.imageview.ShapeableImageView
-                    android:id="@+id/miniPlayerArt"
-                    android:layout_width="50dp"
-                    android:layout_height="50dp"
-                    android:layout_centerVertical="true"
-                    android:layout_marginStart="8dp"
-                    android:scaleType="centerCrop"
-                    android:src="@drawable/until_bleed"
-                    app:shapeAppearanceOverlay="@style/RoundedImage8" />
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_centerVertical="true"
-                    android:layout_marginStart="16dp"
-                    android:layout_toEndOf="@id/miniPlayerArt"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Until I Bleed Out"
-                        android:textColor="#FFFFFF"
-                        android:textSize="15sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="12dp"
-                        android:text="The Weeknd"
-                        android:textColor="#B3B3B3"
-                        android:textSize="13sp" />
-                </LinearLayout>
-
-                <ImageView
-                    android:id="@+id/miniPlayPause"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:layout_alignParentEnd="true"
-                    android:layout_centerVertical="true"
-                    android:layout_marginEnd="12dp"
-                    android:background="@drawable/circle_white_bg"
-                    android:backgroundTint="#2A2E38"
-                    android:padding="12dp"
-                    android:src="@drawable/ic_play"
-                    app:tint="#FFFFFF" />
-
-                <ImageView
-                    android:layout_width="22dp"
-                    android:layout_height="22dp"
-                    android:layout_centerVertical="true"
-                    android:layout_marginEnd="20dp"
-                    android:layout_toStartOf="@id/miniPlayPause"
-                    android:src="@drawable/ic_back"
-                    android:rotation="180"
-                    app:tint="#FFFFFF" />
-
-                <!-- Progress Bar -->
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1.5dp"
-                    android:layout_alignParentBottom="true"
-                    android:layout_marginStart="74dp"
-                    android:layout_marginEnd="80dp"
-                    android:layout_marginBottom="10dp"
-                    android:background="#20FFFFFF" />
-
-                <View
-                    android:layout_width="60dp"
-                    android:layout_height="1.5dp"
-                    android:layout_alignParentBottom="true"
-                    android:layout_marginStart="74dp"
-                    android:layout_marginBottom="10dp"
-                    android:background="#FFFFFF" />
-
-            </RelativeLayout>
-        </androidx.cardview.widget.CardView>
-
-        <include layout="@layout/bottom_nav" />
-
-    </LinearLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

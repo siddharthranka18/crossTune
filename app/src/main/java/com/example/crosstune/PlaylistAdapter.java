@@ -1,6 +1,7 @@
 package com.example.crosstune;
 
 import android.content.Context;
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -8,7 +9,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
-import com.bumptech.glide.Glide; // Required
+import com.bumptech.glide.Glide;
 import java.util.List;
 
 public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.MyViewHolder> {
@@ -32,11 +33,18 @@ public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.MyView
         holder.title.setText(model.getTitle());
         holder.artist.setText(model.getArtist());
 
-        // Use Glide to load the URL string into the ImageView
         Glide.with(context)
                 .load(model.getImage())
-                .placeholder(R.drawable.ic_launcher_background) // Placeholder while loading
+                .placeholder(R.drawable.ic_launcher_background)
                 .into(holder.image);
+
+        // --- UPDATED: Click Listener to open PlaylistActivity ---
+        holder.itemView.setOnClickListener(v -> {
+            Intent intent = new Intent(context, PlaylistActivity.class);
+            intent.putExtra("playlist_title", model.getTitle());
+            intent.putExtra("playlist_image", model.getImage());
+            context.startActivity(intent);
+        });
     }
 
     @Override
@@ -47,7 +55,7 @@ public class PlaylistAdapter extends RecyclerView.Adapter<PlaylistAdapter.MyView
         TextView title, artist;
         public MyViewHolder(@NonNull View itemView) {
             super(itemView);
-            image = itemView.findViewById(R.id.playlistImage); // Ensure this matches your XML ID
+            image = itemView.findViewById(R.id.playlistImage);
             title = itemView.findViewById(R.id.playlistTitle);
             artist = itemView.findViewById(R.id.playlistArtist);
         }

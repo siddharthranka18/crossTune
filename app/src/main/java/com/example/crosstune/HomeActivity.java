@@ -2,6 +2,7 @@ package com.example.crosstune;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.Toast;
@@ -11,7 +12,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.PagerSnapHelper;
 import androidx.recyclerview.widget.RecyclerView;
-import androidx.recyclerview.widget.SnapHelper;
 
 import com.google.firebase.auth.FirebaseAuth;
 
@@ -25,9 +25,9 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 public class HomeActivity extends AppCompatActivity {
+    private static final String TAG = "HomeActivity";
 
     private PlaylistAdapter playlistAdapter;
-
     private List<PlaylistModel> playlistList = new ArrayList<>();
     private SpotifyApiService apiService;
 
@@ -44,21 +44,18 @@ public class HomeActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
+        
         AppState.init(this);
-        // 1. Initialize SessionManager
 
-        // 2. Initialize Retrofit
         Retrofit retrofit = new Retrofit.Builder()
                 .baseUrl("https://api.spotify.com/")
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
         apiService = retrofit.create(SpotifyApiService.class);
 
-        // 3. Setup UI
         setupPlaylistRecycler();
         setupJamRecycler();
 
-        // 4. Navigation
         findViewById(R.id.ic_profile).setOnClickListener(v -> {
             startActivity(new Intent(this, ProfileActivity.class));
         });
@@ -71,15 +68,21 @@ public class HomeActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-
-        // 1. Get token from the "Disk" storage
+        
         String token = AppState.sessionManager.getSpotifyToken();
 
-        // 2. Check the "Global" flag
-//        if (token != null && !AppState.isPlaylistDataFetched) {
-//
-//        }
-        fetchSpotifyPlaylists(token);
+        if (token != null && !token.isEmpty()) {
+            fetchSpotifyPlaylists(token);
+        } else {
+            addPlaceholderPlaylists();
+        }
+    }
+
+    private void addPlaceholderPlaylists() {
+        playlistList.clear();
+        playlistList.add(new PlaylistModel("https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17", "Chill Beats", "Connect Spotify to see yours"));
+        playlistList.add(new PlaylistModel("https://images.unsplash.com/photo-1493225255756-d9584f8606e9", "Top Charts", "CrossTune Original"));
+        playlistAdapter.notifyDataSetChanged();
     }
 
     private void fetchSpotifyPlaylists(String token) {
@@ -87,20 +90,31 @@ public class HomeActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call<PlaylistResponse> call, Response<PlaylistResponse> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    playlistList.clear();
-                    for (Playlist p : response.body().items) {
-                        String imgUrl = (p.images != null && p.images.length > 0) ? p.images[0].url : "";
-                        playlistList.add(new PlaylistModel(imgUrl, p.name, "Spotify Playlist"));
+                    List<Playlist> items = response.body().items;
+                    if (items != null && !items.isEmpty()) {
+                        playlistList.clear();
+                        for (Playlist p : items) {
+                            String imgUrl = (p.images != null && p.images.length > 0) ? p.images[0].url : "";
+                            playlistList.add(new PlaylistModel(imgUrl, p.name, "Spotify Playlist"));
+                        }
+                        playlistAdapter.notifyDataSetChanged();
+                        Log.d(TAG, "Spotify playlists loaded.");
+                    } else {
+                        Log.d(TAG, "Spotify returned 0 playlists.");
+                        addPlaceholderPlaylists();
                     }
-                    playlistAdapter.notifyDataSetChanged();
                 } else {
-                    Toast.makeText(HomeActivity.this, "Session Expired", Toast.LENGTH_SHORT).show();
+                    Log.e(TAG, "Spotify API Error: " + response.code());
+                    Toast.makeText(HomeActivity.this, "Spotify Error: " + response.code(), Toast.LENGTH_LONG).show();
+                    addPlaceholderPlaylists();
                 }
             }
 
             @Override
             public void onFailure(Call<PlaylistResponse> call, Throwable t) {
-                Toast.makeText(HomeActivity.this, "Network Error", Toast.LENGTH_SHORT).show();
+                Log.e(TAG, "Network Failure", t);
+                Toast.makeText(HomeActivity.this, "Network error fetching Spotify data", Toast.LENGTH_SHORT).show();
+                addPlaceholderPlaylists();
             }
         });
     }
@@ -110,23 +124,10 @@ public class HomeActivity extends AppCompatActivity {
         playlistAdapter = new PlaylistAdapter(this, playlistList);
         recyclerView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
         recyclerView.setAdapter(playlistAdapter);
-
-        new PagerSnapHelper().attachToRecyclerView(recyclerView);
-
-        recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
-            @Override
-            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
-                int center = recyclerView.getWidth() / 2;
-                for (int i = 0; i < recyclerView.getChildCount(); i++) {
-                    View child = recyclerView.getChildAt(i);
-                    int childCenter = (child.getLeft() + child.getRight()) / 2;
-                    float distance = Math.abs(center - childCenter);
-                    float factor = Math.max(0.92f, 1.02f - (distance / center) * 0.15f);
-                    child.setScaleX(factor); child.setScaleY(factor);
-                    child.setAlpha(Math.max(0.8f, factor));
-                }
-            }
-        });
+        
+        if (recyclerView.getOnFlingListener() == null) {
+            new PagerSnapHelper().attachToRecyclerView(recyclerView);
+        }
     }
 
     private void setupJamRecycler() {
@@ -137,26 +138,8 @@ public class HomeActivity extends AppCompatActivity {
         list.add(new JamModel(R.drawable.mybeat, "MY BEAT", "shivam"));
         list.add(new JamModel(R.drawable.trulyyours, "TRULY YOURSS", "ERRIC BELLINGER"));
 
-        // Use JamAdapter which does NOT have a click listener to PlaylistActivity
         JamAdapter adapter = new JamAdapter(this, list);
         recyclerView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
         recyclerView.setAdapter(adapter);
-
-        recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
-            @Override
-            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
-                super.onScrolled(recyclerView, dx, dy);
-                int center = recyclerView.getWidth() / 2;
-                for (int i = 0; i < recyclerView.getChildCount(); i++) {
-                    View child = recyclerView.getChildAt(i);
-                    int childCenter = (child.getLeft() + child.getRight()) / 2;
-                    float distance = Math.abs(center - childCenter);
-                    float factor = Math.max(0.95f, 1.02f - (distance / center) * 0.1f);
-                    child.setScaleX(factor);
-                    child.setScaleY(factor);
-                    child.setAlpha(Math.max(0.85f, factor));
-                }
-            }
-        });
     }
 }
