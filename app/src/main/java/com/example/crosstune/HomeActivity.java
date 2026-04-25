@@ -91,6 +91,7 @@ public class HomeActivity extends AppCompatActivity {
             public void onResponse(Call<PlaylistResponse> call, Response<PlaylistResponse> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     List<Playlist> items = response.body().items;
+
                     if (items != null && !items.isEmpty()) {
                         playlistList.clear();
                         for (Playlist p : items) {
@@ -98,7 +99,21 @@ public class HomeActivity extends AppCompatActivity {
                             playlistList.add(new PlaylistModel(imgUrl, p.name, "Spotify Playlist"));
                         }
                         playlistAdapter.notifyDataSetChanged();
-                        Log.d(TAG, "Spotify playlists loaded.");
+                        Log.d(TAG, "Spotify playlists loaded UI.");
+
+                        // --- DBMS SYNC LOGIC START ---
+                        // Only sync to database if we haven't already done so this session
+                        if (!AppState.isPlaylistDataFetched) {
+                            String userEmail = AppState.sessionManager.getGoogleEmail();
+
+                            // Pass the raw 'items' list to the Sync Manager
+                            PlaylistSyncManager.syncOnFirstFetch(userEmail, items);
+
+                            // Flip the flag to true so we don't hit the DBMS on every onResume()
+                            AppState.isPlaylistDataFetched = true;
+                        }
+                        // --- DBMS SYNC LOGIC END ---
+
                     } else {
                         Log.d(TAG, "Spotify returned 0 playlists.");
                         addPlaceholderPlaylists();
