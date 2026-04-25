@@ -45,21 +45,6 @@
                     android:textSize="28sp"
                     android:textStyle="bold" />
 
-                <View android:layout_width="match_parent" android:layout_height="24dp"/>
-
-                <EditText
-                    android:id="@+id/etName"
-                    android:layout_width="match_parent"
-                    android:layout_height="55dp"
-                    android:background="#FFFFFF"
-                    android:hint="Full Name"
-                    android:inputType="textPersonName"
-                    android:padding="12dp"
-                    android:textColor="#000000"
-                    android:textColorHint="#757575" />
-
-                <View android:layout_width="match_parent" android:layout_height="12dp"/>
-
                 <EditText
                     android:id="@+id/etEmail"
                     android:layout_width="match_parent"
@@ -70,6 +55,21 @@
                     android:padding="12dp"
                     android:textColor="#000000"
                     android:textColorHint="#757575" />
+
+                <View android:layout_width="match_parent" android:layout_height="24dp"/>
+
+                <EditText
+                    android:id="@+id/etName"
+                    android:layout_width="match_parent"
+                    android:layout_height="55dp"
+                    android:background="#FBF9F9"
+                    android:hint="Full Name"
+                    android:inputType="textPersonName"
+                    android:padding="12dp"
+                    android:textColor="#000000"
+                    android:textColorHint="#757575" />
+
+                <View android:layout_width="match_parent" android:layout_height="12dp"/>
 
                 <View android:layout_width="match_parent" android:layout_height="12dp"/>
 
@@ -103,7 +103,7 @@
                     android:layout_gravity="center"
                     android:layout_marginTop="20dp"
                     android:text="Already have an account? Log In"
-                    android:textColor="#4285F4"
+                    android:textColor="#FFFFFF"
                     android:textStyle="bold" />
 
             </LinearLayout>

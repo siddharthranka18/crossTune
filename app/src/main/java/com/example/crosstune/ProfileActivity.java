@@ -70,7 +70,8 @@ public class ProfileActivity extends AppCompatActivity {
         AppState.sessionManager = new SessionManager(this);
         profileNameView = findViewById(R.id.profile_name);
         profileEmailView = findViewById(R.id.profile_email);
-        //refreshProfileUiFromSession();
+        refreshProfileUiFromSession();
+
 
         // 1. Back Button Logic
         ImageView btnBack = findViewById(R.id.btnBack);
@@ -156,19 +157,27 @@ public class ProfileActivity extends AppCompatActivity {
         });
     }
 
-//    @Override
-//    protected void onResume() {
-//        super.onResume();
-//        refreshProfileUiFromSession();
-//    }
-//
-//    private void refreshProfileUiFromSession() {
-//        AppState.sessionManager.ProfileUiState uiState = AppState.sessionManager.getProfileUiState();
-//        profileNameView.setText(uiState.name);
-//        String emailLabel = uiState.email;
-//        if (uiState.spotifyConnected) {
-//            emailLabel = emailLabel + "  (Spotify Connected)";
-//        }
-//        profileEmailView.setText(emailLabel);
-//    }
+    @Override
+    protected void onResume() {
+        super.onResume();
+        refreshProfileUiFromSession();
+    }
+
+    private void refreshProfileUiFromSession() {
+        String name = AppState.sessionManager.getGoogleName();
+        String email = AppState.sessionManager.getGoogleEmail();
+
+
+        String safeName = (name == null || name.trim().isEmpty()) ? "User" : name;
+        String safeEmail = (email == null || email.trim().isEmpty()) ? "No email" : email;
+
+        profileNameView.setText(safeName);
+
+        if (AppState.sessionManager.isSpotifyConnected()) {
+            profileEmailView.setText(safeEmail + "  (Spotify Connected)");
+        } else {
+            profileEmailView.setText(safeEmail);
+        }
+    }
+
 }
