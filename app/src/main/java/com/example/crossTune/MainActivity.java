@@ -1,6 +1,5 @@
 package com.example.crossTune;
 
-
 import android.content.ComponentName;
 import android.graphics.Color;
 import android.os.Bundle;
