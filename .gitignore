@@ -1,10 +1,16 @@
 *.iml
 .gradle
 /local.properties
-/.idea
+/.idea/
+.idea/
+.idea/*
+**/build/
 /build
 /captures
 .externalNativeBuild
 .cxx
 /google-services.json
 .DS_Store
+*.bak
+*.swp
+*~
