@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="160dp"
+    android:layout_height="wrap_content"
+    android:layout_marginEnd="16dp"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground"
+    android:orientation="vertical">
+
+    <!-- THE SQUARE COVER ART -->
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="160dp"
+        android:layout_height="160dp"
+        app:cardBackgroundColor="#1A1C24"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="0dp"
+        app:strokeColor="#2C2F3F"
+        app:strokeWidth="1dp">
+
+        <ImageView
+            android:id="@+id/iv_discover_thumbnail"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:src="@drawable/ic_logo" />
+
+        <!-- SUBTLE GRADIENT OVERLAY (For Premium Look) -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/bg_gradient_overlay"
+            android:alpha="0.3" />
+
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- SONG TITLE -->
+    <TextView
+        android:id="@+id/tv_discover_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:layout_marginStart="4dp"
+        android:layout_marginEnd="4dp"
+        android:ellipsize="end"
+        android:fontFamily="sans-serif-black"
+        android:letterSpacing="-0.01"
+        android:singleLine="true"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        tools:text="Starboy" />
+
+    <!-- ARTIST NAME -->
+    <TextView
+        android:id="@+id/tv_discover_artist"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:layout_marginStart="4dp"
+        android:layout_marginEnd="4dp"
+        android:ellipsize="end"
+        android:fontFamily="sans-serif-medium"
+        android:singleLine="true"
+        android:textColor="#8A8D93"
+        android:textSize="14sp"
+        tools:text="The Weeknd, Daft Punk" />
+
+</LinearLayout>
