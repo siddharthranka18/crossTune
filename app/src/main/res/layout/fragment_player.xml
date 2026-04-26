@@ -176,7 +176,7 @@
     <!-- ============================================== -->
     <!-- PROGRESS LINE (UPGRADED TO BE THICK & PREMIUM) -->
     <!-- ============================================== -->
-    <com.onrender.music.SquigglySeekBar
+    <com.example.crossTune.SquigglySeekBar
         android:id="@+id/seek_bar_progress"
         android:layout_width="0dp"
         android:layout_height="48dp"

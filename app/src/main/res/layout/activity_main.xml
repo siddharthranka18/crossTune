@@ -246,7 +246,7 @@
         <!-- THE SQUIGGLY REPLACEMENT: Placed LAST in the XML so it has the absolute highest Z-index.
              Height expanded to 48dp so the Canvas doesn't cut its own 18dp glow radius.
              Pulled up by -24dp to align perfectly with the border. -->
-        <com.onrender.music.SquigglySeekBar
+        <com.example.crossTune.SquigglySeekBar
             android:id="@+id/bottom_progress_bar"
             android:layout_width="0dp"
             android:layout_height="48dp"

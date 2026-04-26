@@ -4,7 +4,7 @@ plugins {
 
 android {
     namespace = "com.example.crossTune"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.example.crossTune"
