@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/root_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0A0B0E"
+    android:clipChildren="false"
+    android:clipToPadding="false"
+    tools:context=".MainActivity">
+
+    <!-- 1. THE SIDEBAR (Songs, Playlist, Jam, Settings) -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/sidebar"
+        android:layout_width="54dp"
+        android:layout_height="0dp"
+        android:background="#0A0B0E"
+        android:elevation="12dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:id="@+id/sidebar_logo"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginTop="16dp"
+            android:src="@drawable/ic_logo"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/btn_bottom_settings"
+            app:tint="#FFFFFF" />
+
+        <FrameLayout
+            android:id="@+id/nav_songs_wrapper"
+            android:layout_width="match_parent"
+            android:layout_height="100dp"
+            android:layout_marginTop="16dp"
+            android:background="?attr/selectableItemBackground"
+            app:layout_constraintTop_toBottomOf="@id/sidebar_logo">
+
+            <TextView
+                android:id="@+id/btn_songs"
+                android:layout_width="120dp"
+                android:layout_height="64dp"
+                android:layout_gravity="center"
+                android:fontFamily="sans-serif-black"
+                android:gravity="center"
+                android:includeFontPadding="false"
+                android:letterSpacing="0.15"
+                android:rotation="-90"
+                android:singleLine="true"
+                android:text="SONGS"
+                android:textColor="#FFFFFF"
+                android:textSize="12sp" />
+        </FrameLayout>
+
+        <View
+            android:id="@+id/active_indicator"
+            android:layout_width="2dp"
+            android:layout_height="32dp"
+            android:background="#FFFFFF"
+            app:layout_constraintBottom_toBottomOf="@id/nav_songs_wrapper"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="@id/nav_songs_wrapper" />
+
+        <FrameLayout
+            android:id="@+id/nav_playlist_wrapper"
+            android:layout_width="match_parent"
+            android:layout_height="100dp"
+            android:background="?attr/selectableItemBackground"
+            app:layout_constraintTop_toBottomOf="@id/nav_songs_wrapper">
+
+            <TextView
+                android:id="@+id/btn_playlist"
+                android:layout_width="120dp"
+                android:layout_height="64dp"
+                android:layout_gravity="center"
+                android:fontFamily="sans-serif-black"
+                android:gravity="center"
+                android:includeFontPadding="false"
+                android:letterSpacing="0.15"
+                android:rotation="-90"
+                android:singleLine="true"
+                android:text="PLAYLIST"
+                android:textColor="#5E6168"
+                android:textSize="12sp" />
+        </FrameLayout>
+
+        <FrameLayout
+            android:id="@+id/nav_jam_wrapper"
+            android:layout_width="match_parent"
+            android:layout_height="100dp"
+            android:background="?attr/selectableItemBackground"
+            app:layout_constraintTop_toBottomOf="@id/nav_playlist_wrapper">
+
+            <TextView
+                android:id="@+id/btn_jam_sidebar"
+                android:layout_width="120dp"
+                android:layout_height="64dp"
+                android:layout_gravity="center"
+                android:fontFamily="sans-serif-black"
+                android:gravity="center"
+                android:includeFontPadding="false"
+                android:letterSpacing="0.15"
+                android:rotation="-90"
+                android:singleLine="true"
+                android:text="JOIN JAM"
+                android:textColor="#5E6168"
+                android:textSize="12sp" />
+        </FrameLayout>
+
+        <ImageView
+            android:id="@+id/btn_bottom_settings"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginTop="16dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:focusable="true"
+            android:padding="10dp"
+            android:src="@drawable/ic_setting"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:tint="#5E6168" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <!-- 2. MAIN CONTENT CONTAINER -->
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/main_fragment_container"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toTopOf="@+id/bottom_player_bar"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/sidebar"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- 3. THE BOTTOM PLAYER BAR -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/bottom_player_bar"
+        android:layout_width="0dp"
+        android:layout_height="72dp"
+        android:background="#121318"
+        android:clickable="true"
+        android:focusable="true"
+        android:foreground="?attr/selectableItemBackground"
+        android:visibility="gone"
+        android:elevation="20dp"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        tools:visibility="visible">
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/card_bottom_thumbnail"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginStart="16dp"
+            app:cardBackgroundColor="#1A1C24"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="0dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <ImageView
+                android:id="@+id/iv_bottom_thumbnail"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:src="@drawable/ic_logo" />
+        </com.google.android.material.card.MaterialCardView>
+
+        <TextView
+            android:id="@+id/tv_bottom_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:ellipsize="end"
+            android:fontFamily="sans-serif-medium"
+            android:singleLine="true"
+            android:textColor="#FFFFFF"
+            android:textSize="15sp"
+            app:layout_constraintBottom_toTopOf="@+id/tv_bottom_artist"
+            app:layout_constraintEnd_toStartOf="@+id/btn_bottom_play_pause"
+            app:layout_constraintStart_toEndOf="@+id/card_bottom_thumbnail"
+            app:layout_constraintTop_toTopOf="@+id/card_bottom_thumbnail"
+            app:layout_constraintVertical_chainStyle="packed"
+            tools:text="Song Title" />
+
+        <TextView
+            android:id="@+id/tv_bottom_artist"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="2dp"
+            android:layout_marginEnd="16dp"
+            android:ellipsize="end"
+            android:fontFamily="sans-serif"
+            android:singleLine="true"
+            android:textColor="#8A8D93"
+            android:textSize="13sp"
+            app:layout_constraintBottom_toBottomOf="@+id/card_bottom_thumbnail"
+            app:layout_constraintEnd_toStartOf="@+id/btn_bottom_play_pause"
+            app:layout_constraintStart_toEndOf="@+id/card_bottom_thumbnail"
+            app:layout_constraintTop_toBottomOf="@+id/tv_bottom_title"
+            tools:text="Artist Name" />
+
+        <ImageView
+            android:id="@+id/btn_bottom_next"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginEnd="16dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:focusable="true"
+            android:padding="14dp"
+            android:src="@android:drawable/ic_media_next"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:tint="#FFFFFF" />
+
+        <ImageView
+            android:id="@+id/btn_bottom_play_pause"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginEnd="8dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:focusable="true"
+            android:padding="10dp"
+            android:src="@drawable/ic_play"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/btn_bottom_next"
+            app:layout_constraintTop_toTopOf="parent"
+            app:tint="#FFFFFF" />
+
+        <!-- THE SQUIGGLY REPLACEMENT: Placed LAST in the XML so it has the absolute highest Z-index.
+             Height expanded to 48dp so the Canvas doesn't cut its own 18dp glow radius.
+             Pulled up by -24dp to align perfectly with the border. -->
+        <com.onrender.music.SquigglySeekBar
+            android:id="@+id/bottom_progress_bar"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_marginTop="-24dp"
+            android:paddingStart="0dp"
+            android:paddingEnd="0dp"
+            android:max="1000"
+            android:translationZ="10dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <!-- ========================================================= -->
+    <!-- 4. THE ULTIMATE OVERLAY (For buttery smooth animations)   -->
+    <!-- ========================================================= -->
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/player_fragment_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:elevation="30dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
