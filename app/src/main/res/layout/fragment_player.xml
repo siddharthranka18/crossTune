@@ -1,0 +1,337 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0A0B0E"
+    tools:context=".PlayerFragment">
+
+    <!-- COLLAPSE BUTTON -->
+    <ImageView
+        android:id="@+id/btn_collapse"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="24dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:clickable="true"
+        android:focusable="true"
+        android:padding="12dp"
+        android:rotation="-90"
+        android:src="@drawable/ic_arrow"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:tint="#FFFFFF" />
+
+    <!-- JAM / BROADCAST BUTTON (Top Center) -->
+    <LinearLayout
+        android:id="@+id/btn_jam_host"
+        android:layout_width="wrap_content"
+        android:layout_height="48dp"
+        android:layout_marginTop="24dp"
+        android:background="?attr/selectableItemBackground"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="center"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        app:layout_constraintEnd_toStartOf="@id/btn_download"
+        app:layout_constraintStart_toEndOf="@id/btn_collapse"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:id="@+id/iv_jam_icon"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/ic_jam"
+            app:tint="#8A8D93" />
+
+        <TextView
+            android:id="@+id/tv_jam_status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:fontFamily="sans-serif-black"
+            android:text="START JAM"
+            android:textColor="#8A8D93"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <!-- DOWNLOAD BUTTON -->
+    <ImageView
+        android:id="@+id/btn_download"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginTop="24dp"
+        android:layout_marginEnd="16dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:clickable="true"
+        android:focusable="true"
+        android:padding="12dp"
+        android:src="@drawable/ic_download"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:tint="#FFFFFF" />
+
+    <!-- ============================================== -->
+    <!-- PLAYING CONTEXT HEADER (The New Intelligence)  -->
+    <!-- ============================================== -->
+    <LinearLayout
+        android:id="@+id/layout_playing_context"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:gravity="center"
+        android:orientation="vertical"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btn_jam_host">
+
+        <TextView
+            android:id="@+id/tv_context_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-medium"
+            android:letterSpacing="0.15"
+            android:text="PLAYING FROM"
+            android:textColor="#5E6168"
+            android:textSize="10sp" />
+
+        <TextView
+            android:id="@+id/tv_playing_context"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:fontFamily="sans-serif-black"
+            android:textColor="#FFFFFF"
+            android:textSize="13sp"
+            tools:text="Search Results" />
+    </LinearLayout>
+
+    <!-- HUGE THUMBNAIL (Constrained perfectly below the new Context Header) -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/card_player_thumbnail"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="20dp"
+        app:cardBackgroundColor="#121318"
+        app:cardCornerRadius="24dp"
+        app:layout_constraintDimensionRatio="1:1"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/layout_playing_context"
+        app:strokeColor="#1E1F27"
+        app:strokeWidth="0dp">
+
+        <ImageView
+            android:id="@+id/iv_huge_thumbnail"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:src="@drawable/ic_logo" />
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- SONG NAME -->
+    <TextView
+        android:id="@+id/tv_player_song_name"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="32dp"
+        android:layout_marginTop="24dp"
+        android:layout_marginEnd="32dp"
+        android:ellipsize="end"
+        android:fontFamily="sans-serif-black"
+        android:gravity="center"
+        android:singleLine="true"
+        android:textColor="#FFFFFF"
+        android:textSize="22sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/card_player_thumbnail"
+        tools:text="Song Name" />
+
+    <!-- ARTIST NAME -->
+    <TextView
+        android:id="@+id/tv_player_artist_name"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="32dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginEnd="32dp"
+        android:ellipsize="end"
+        android:fontFamily="sans-serif-medium"
+        android:gravity="center"
+        android:singleLine="true"
+        android:textColor="#8A8D93"
+        android:textSize="15sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tv_player_song_name"
+        tools:text="Artist Name" />
+
+    <!-- ============================================== -->
+    <!-- PROGRESS LINE (UPGRADED TO BE THICK & PREMIUM) -->
+    <!-- ============================================== -->
+    <com.onrender.music.SquigglySeekBar
+        android:id="@+id/seek_bar_progress"
+        android:layout_width="0dp"
+        android:layout_height="48dp"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="20dp"
+        android:layout_marginEnd="20dp"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tv_player_artist_name" />
+
+    <!-- TIMESTAMPS -->
+    <TextView
+        android:id="@+id/tv_time_current"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="36dp"
+        android:layout_marginTop="4dp"
+        android:fontFamily="sans-serif-medium"
+        android:text="00:00"
+        android:textColor="#8A8D93"
+        android:textSize="12sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/seek_bar_progress" />
+
+    <TextView
+        android:id="@+id/tv_time_total"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="36dp"
+        android:layout_marginTop="4dp"
+        android:fontFamily="sans-serif-medium"
+        android:text="00:00"
+        android:textColor="#8A8D93"
+        android:textSize="12sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/seek_bar_progress" />
+
+    <!-- CONTROLS ROW -->
+    <ImageView
+        android:id="@+id/btn_like"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginStart="24dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:clickable="true"
+        android:focusable="true"
+        android:padding="12dp"
+        android:src="@drawable/ic_heart"
+        app:layout_constraintBottom_toTopOf="@+id/bottom_action_bar"
+        app:layout_constraintEnd_toStartOf="@+id/btn_prev"
+        app:layout_constraintHorizontal_chainStyle="spread_inside"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tv_time_current"
+        app:tint="#8A8D93" />
+
+    <ImageView
+        android:id="@+id/btn_prev"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:clickable="true"
+        android:focusable="true"
+        android:padding="14dp"
+        android:src="@drawable/ic_prev"
+        app:layout_constraintBottom_toBottomOf="@+id/btn_like"
+        app:layout_constraintEnd_toStartOf="@+id/btn_play_pause"
+        app:layout_constraintStart_toEndOf="@+id/btn_like"
+        app:layout_constraintTop_toTopOf="@+id/btn_like"
+        app:tint="#FFFFFF" />
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/btn_play_pause"
+        android:layout_width="70dp"
+        android:layout_height="70dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:foreground="?attr/selectableItemBackground"
+        app:cardBackgroundColor="#FFFFFF"
+        app:cardCornerRadius="35dp"
+        app:cardElevation="0dp"
+        app:layout_constraintBottom_toBottomOf="@+id/btn_like"
+        app:layout_constraintEnd_toStartOf="@+id/btn_next"
+        app:layout_constraintStart_toEndOf="@+id/btn_prev"
+        app:layout_constraintTop_toTopOf="@+id/btn_like"
+        app:strokeWidth="0dp">
+
+        <ImageView
+            android:id="@+id/iv_play_pause_icon"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_gravity="center"
+            android:src="@drawable/ic_play"
+            app:tint="#0A0B0E" />
+    </com.google.android.material.card.MaterialCardView>
+
+    <ImageView
+        android:id="@+id/btn_next"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:clickable="true"
+        android:focusable="true"
+        android:padding="14dp"
+        android:src="@drawable/ic_next"
+        app:layout_constraintBottom_toBottomOf="@+id/btn_like"
+        app:layout_constraintEnd_toStartOf="@+id/btn_repeat"
+        app:layout_constraintStart_toEndOf="@+id/btn_play_pause"
+        app:layout_constraintTop_toTopOf="@+id/btn_like"
+        app:tint="#FFFFFF" />
+
+    <ImageView
+        android:id="@+id/btn_repeat"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginEnd="24dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:clickable="true"
+        android:focusable="true"
+        android:padding="12dp"
+        android:src="@drawable/ic_repeat"
+        app:layout_constraintBottom_toBottomOf="@+id/btn_like"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/btn_next"
+        app:layout_constraintTop_toTopOf="@+id/btn_like"
+        app:tint="#8A8D93" />
+
+    <!-- THE BOTTOM ACTION BAR (Add to Playlist) -->
+    <LinearLayout
+        android:id="@+id/bottom_action_bar"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:background="#121318"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:clickable="true"
+        android:focusable="true"
+        android:foreground="?attr/selectableItemBackground"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_playlist"
+            app:tint="#8A8D93" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:fontFamily="sans-serif-medium"
+            android:text="Add to Playlist"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp" />
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
