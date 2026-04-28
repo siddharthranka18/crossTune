@@ -10,6 +10,7 @@
 .externalNativeBuild
 .cxx
 /google-services.json
+/app/google-services.json
 .DS_Store
 *.bak
 *.swp
