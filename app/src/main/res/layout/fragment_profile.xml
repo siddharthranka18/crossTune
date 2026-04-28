@@ -108,6 +108,48 @@
                 app:tint="#5E6168" />
         </androidx.constraintlayout.widget.ConstraintLayout>
 
+        <!-- Insights / Top Artist -->
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/btn_insights"
+            android:layout_width="match_parent"
+            android:layout_height="64dp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:id="@+id/ic_insights_menu"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@android:drawable/ic_menu_sort_by_size"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:tint="#FFFFFF" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:fontFamily="sans-serif-medium"
+                android:text="Your Insights (Top Artist)"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toEndOf="@id/ic_insights_menu"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:rotation="180"
+                android:src="@drawable/ic_arrow"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:tint="#5E6168" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
         <!-- Contact Us -->
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/btn_contact_us"
@@ -150,9 +192,9 @@
                 app:tint="#5E6168" />
         </androidx.constraintlayout.widget.ConstraintLayout>
 
-        <!-- Privacy Policy -->
+        <!-- Log Out (Moved here) -->
         <androidx.constraintlayout.widget.ConstraintLayout
-            android:id="@+id/btn_privacy_policy"
+            android:id="@+id/btn_logout_menu"
             android:layout_width="match_parent"
             android:layout_height="64dp"
             android:background="?attr/selectableItemBackground"
@@ -160,25 +202,25 @@
             android:focusable="true">
 
             <ImageView
-                android:id="@+id/ic_privacy_menu"
+                android:id="@+id/ic_logout_menu"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:src="@android:drawable/ic_menu_info_details"
+                android:src="@android:drawable/ic_lock_power_off"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
-                app:tint="#FFFFFF" />
+                app:tint="#FF5252" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
                 android:fontFamily="sans-serif-medium"
-                android:text="Privacy Policy"
-                android:textColor="#FFFFFF"
+                android:text="Log Out"
+                android:textColor="#FF5252"
                 android:textSize="16sp"
                 app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintStart_toEndOf="@id/ic_privacy_menu"
+                app:layout_constraintStart_toEndOf="@id/ic_logout_menu"
                 app:layout_constraintTop_toTopOf="parent" />
 
             <ImageView
@@ -194,17 +236,18 @@
 
     </LinearLayout>
 
-    <!-- Log Out Button -->
+    <!-- Delete Account Section (Highlighted) -->
     <com.google.android.material.button.MaterialButton
-        android:id="@+id/btn_logout"
+        android:id="@+id/btn_delete_account"
         style="@style/Widget.MaterialComponents.Button.TextButton"
         android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:layout_marginBottom="32dp"
+        android:layout_height="64dp"
+        android:layout_marginBottom="16dp"
         android:fontFamily="sans-serif-black"
-        android:text="Log Out"
+        android:text="DELETE ACCOUNT"
         android:textColor="#FF5252"
         android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="parent" />
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:rippleColor="#20FF5252" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -161,9 +161,22 @@ public class PlaylistsFragment extends Fragment {
 
             holder.name.setText(p.getName());
 
-            // Format song count grammar beautifully
+            // 1. INSTANT LOAD: Calculate statistics locally using existing session data
             int size = songs.size();
-            holder.count.setText(size + (size == 1 ? " song" : " songs"));
+            long localSeconds = 0;
+            for (Song s : songs) {
+                localSeconds += s.getDuration();
+            }
+            long localMins = localSeconds / 60;
+
+            // Show local data immediately so there is no "Loading..." flicker
+            holder.count.setText(size + " / " + localMins + " mins");
+
+            // 2. BACKGROUND SYNC: Call DB via Stored Procedure (Point 12) to verify data
+            DB.getPlaylistSummary(p.getId(), (dbCount, dbMins) -> {
+                // Silently update if the database has different info (e.g. cross-device sync)
+                holder.count.setText(dbCount + " / " + dbMins + " mins");
+            });
 
             // Clear Glide bindings so recycled views don't show wrong images briefly
             Context ctx = holder.itemView.getContext();
