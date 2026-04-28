@@ -43,7 +43,7 @@ public class MainActivity extends AppCompatActivity {
     private View activeIndicator;
     private FrameLayout navSongs, navPlaylist, navJam;
     private TextView tvSongs, tvPlaylist, tvJamSidebar;
-    private ImageView btnBottomSettings;
+    private ImageView btnBottomSettings, btnSidebarProfile;
 
     private ConstraintLayout bottomPlayerBar;
     private SquigglySeekBar bottomProgressBar; // Upgraded to Premium Squiggly Bar
@@ -55,6 +55,7 @@ public class MainActivity extends AppCompatActivity {
     private Fragment playerFragment;
     private Fragment playlistsFragment;
     private Fragment settingsFragment;
+    private Fragment profileFragment;
     private Fragment activeFragment;
 
     // Architecture & Remote Playback
@@ -127,6 +128,7 @@ public class MainActivity extends AppCompatActivity {
         tvPlaylist = findViewById(R.id.btn_playlist);
         tvJamSidebar = findViewById(R.id.btn_jam_sidebar);
         btnBottomSettings = findViewById(R.id.btn_bottom_settings);
+        btnSidebarProfile = findViewById(R.id.btn_sidebar_profile);
 
         bottomPlayerBar = findViewById(R.id.bottom_player_bar);
         bottomProgressBar = findViewById(R.id.bottom_progress_bar);
@@ -157,12 +159,14 @@ public class MainActivity extends AppCompatActivity {
             playerFragment = new PlayerFragment();
             settingsFragment = new SettingsFragment();
             playlistsFragment = new PlaylistsFragment();
+            profileFragment = new ProfileFragment();
 
             fm.beginTransaction()
                     // ULTIMATE FIX: PlayerFragment goes into the TOP LAYER OVERLAY
                     .add(R.id.player_fragment_container, playerFragment, "PLAYER").hide(playerFragment)
                     .add(R.id.main_fragment_container, settingsFragment, "SETTINGS").hide(settingsFragment)
                     .add(R.id.main_fragment_container, playlistsFragment, "PLAYLIST").hide(playlistsFragment)
+                    .add(R.id.main_fragment_container, profileFragment, "PROFILE").hide(profileFragment)
                     .add(R.id.main_fragment_container, searchFragment, "SONGS")
                     .commit();
 
@@ -174,6 +178,7 @@ public class MainActivity extends AppCompatActivity {
             playerFragment = fm.findFragmentByTag("PLAYER");
             settingsFragment = fm.findFragmentByTag("SETTINGS");
             playlistsFragment = fm.findFragmentByTag("PLAYLIST");
+            profileFragment = fm.findFragmentByTag("PROFILE");
 
             if (searchFragment != null && !searchFragment.isHidden()) {
                 activeFragment = searchFragment;
@@ -184,6 +189,9 @@ public class MainActivity extends AppCompatActivity {
             } else if (settingsFragment != null && !settingsFragment.isHidden()) {
                 activeFragment = settingsFragment;
                 updateSidebarUI(btnBottomSettings, null, false);
+            } else if (profileFragment != null && !profileFragment.isHidden()) {
+                activeFragment = profileFragment;
+                updateSidebarUI(btnSidebarProfile, null, false);
             } else if (playerFragment != null && !playerFragment.isHidden()) {
                 isPlayerExpanded = true;
                 findViewById(R.id.player_fragment_container).setVisibility(View.VISIBLE);
@@ -261,6 +269,7 @@ public class MainActivity extends AppCompatActivity {
         navSongs.setOnClickListener(v -> switchTab(searchFragment, navSongs, tvSongs));
         navPlaylist.setOnClickListener(v -> switchTab(playlistsFragment, navPlaylist, tvPlaylist));
         btnBottomSettings.setOnClickListener(v -> switchTab(settingsFragment, btnBottomSettings, null));
+        btnSidebarProfile.setOnClickListener(v -> switchTab(profileFragment, btnSidebarProfile, null));
         navJam.setOnClickListener(v -> showJoinJamDialog());
 
         bottomPlayerBar.setOnClickListener(v -> openFullScreenPlayer());
@@ -409,9 +418,11 @@ public class MainActivity extends AppCompatActivity {
         tvSongs.setTextColor(Color.parseColor(COLOR_INACTIVE));
         tvPlaylist.setTextColor(Color.parseColor(COLOR_INACTIVE));
         btnBottomSettings.setColorFilter(Color.parseColor(COLOR_INACTIVE));
+        btnSidebarProfile.setColorFilter(Color.parseColor(COLOR_INACTIVE));
 
         if (currentActiveText != null) currentActiveText.setTextColor(currentAccentColor);
         else if (currentActiveAnchor == btnBottomSettings) btnBottomSettings.setColorFilter(currentAccentColor);
+        else if (currentActiveAnchor == btnSidebarProfile) btnSidebarProfile.setColorFilter(currentAccentColor);
 
         if (musicViewModel != null && musicViewModel.getJamRoomCode() != null && musicViewModel.getJamRoomCode().getValue() != null) {
             tvJamSidebar.setTextColor(currentAccentColor);
