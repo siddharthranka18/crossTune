@@ -2,6 +2,7 @@ package com.example.crossTune;
 
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -13,6 +14,11 @@ public class DB {
     private static final String USER = "root";
     private static final String PASS = "vpytRSemYOnDrVTTLOKUTihyZIxSPggo";
 
+    private static final String[] MYSQL_DRIVERS = {
+            "com.mysql.cj.jdbc.Driver",
+            "com.mysql.jdbc.Driver"
+    };
+
     public interface SummaryCallback {
         void onResult(int count, int minutes);
     }
@@ -20,7 +26,7 @@ public class DB {
     public static void execute(String query) {
         new Thread(() -> {
             try {
-                Class.forName("com.mysql.cj.jdbc.Driver");
+                loadDriver();
                 try (Connection c = DriverManager.getConnection(URL, USER, PASS);
                      Statement s = c.createStatement()) {
                     s.execute(query);
@@ -31,11 +37,24 @@ public class DB {
         }).start();
     }
 
+    // Runs in the caller thread; use from a background thread to keep ordering.
+    public static void executeSync(String query) {
+        try {
+            loadDriver();
+            try (Connection c = DriverManager.getConnection(URL, USER, PASS);
+                 Statement s = c.createStatement()) {
+                s.execute(query);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     // FULFILLING RUBRIC: Calling a Stored Procedure (Point 12)
     public static void getPlaylistSummary(String playlistId, SummaryCallback callback) {
         new Thread(() -> {
             try {
-                Class.forName("com.mysql.cj.jdbc.Driver");
+                loadDriver();
                 try (Connection c = DriverManager.getConnection(URL, USER, PASS);
                      Statement s = c.createStatement();
                      ResultSet rs = s.executeQuery("CALL GetPlaylistSummary('" + playlistId + "')")) {
@@ -55,5 +74,18 @@ public class DB {
                 e.printStackTrace();
             }
         }).start();
+    }
+
+    private static void loadDriver() throws ClassNotFoundException {
+        for (String driver : MYSQL_DRIVERS) {
+            try {
+                Class.forName(driver);
+                Log.d("DB", "Loaded MySQL driver: " + driver);
+                return;
+            } catch (ClassNotFoundException ignored) {
+                // Try next
+            }
+        }
+        throw new ClassNotFoundException("No MySQL JDBC driver found in APK");
     }
 }

@@ -105,10 +105,12 @@ public class SharedMusicViewModel extends AndroidViewModel {
             updateArtistAffinity(prevSong.getArtist(), -5);
 
             // Trigger Mood Pivot if 3 skips occur in a row
+            /*
             if (rapidSkipCount >= 3) {
                 Log.d("TelemetryEngine", "Mood Pivot Triggered! User is bored.");
                 moodPivotEvent.setValue(true);
             }
+            */
         } else {
             // THE USER LIKED THIS: Reset skip count
             if (timeListenedMs > 30000) rapidSkipCount = 0;
@@ -558,4 +560,3 @@ public class SharedMusicViewModel extends AndroidViewModel {
         } catch (Exception e) { Log.e("ViewModel", "Load Failed", e); }
     }
 }
-

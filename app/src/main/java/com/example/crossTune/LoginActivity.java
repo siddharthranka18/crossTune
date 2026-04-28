@@ -18,15 +18,11 @@ import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.SetOptions;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class LoginActivity extends AppCompatActivity{
 
     private static final int RC_SIGN_IN = 9001;
+    private static final boolean FORCE_GOOGLE_CONSENT = false;
 
     private FirebaseAuth auth;
     private GoogleSignInClient googleSignInClient;
@@ -51,15 +47,26 @@ public class LoginActivity extends AppCompatActivity{
         loginButton = findViewById(R.id.loginButton);
         loginButton.setOnClickListener(v -> startSignIn());
 
-        if (auth.getCurrentUser() != null) {
+        if (FORCE_GOOGLE_CONSENT) {
+            auth.signOut();
+            googleSignInClient.signOut().addOnCompleteListener(task ->
+                    googleSignInClient.revokeAccess().addOnCompleteListener(task2 -> {}));
+        }
+
+        if (!FORCE_GOOGLE_CONSENT && auth.getCurrentUser() != null) {
+            saveUserToDb(auth.getCurrentUser());
             goToMain();
         }
 
     }
 
     private void startSignIn() {
-        Intent signInIntent = googleSignInClient.getSignInIntent();
-        startActivityForResult(signInIntent, RC_SIGN_IN);
+        googleSignInClient.signOut().addOnCompleteListener(task ->
+                googleSignInClient.revokeAccess().addOnCompleteListener(task2 -> {
+                    Intent signInIntent = googleSignInClient.getSignInIntent();
+                    startActivityForResult(signInIntent, RC_SIGN_IN);
+                })
+        );
     }
 
     @Override
@@ -70,6 +77,10 @@ public class LoginActivity extends AppCompatActivity{
             try {
                 GoogleSignInAccount account = task.getResult(ApiException.class);
                 if (account != null) {
+                    if (account.getIdToken() == null) {
+                        Log.e("LoginActivity", "Google sign-in missing ID token. Check default_web_client_id.");
+                        return;
+                    }
                     firebaseAuthWithGoogle(account.getIdToken());
                 }
             } catch (ApiException e) {
@@ -95,15 +106,6 @@ public class LoginActivity extends AppCompatActivity{
         String uid = user.getUid();
         String name = user.getDisplayName();
         String email = user.getEmail();
-
-        Map<String, Object> data = new HashMap<>();
-        data.put("name", name);
-        data.put("email", email);
-
-        FirebaseFirestore.getInstance()
-                .collection("users")
-                .document(uid)
-                .set(data, SetOptions.merge());
 
         if (email == null) return;
         String userId = escapeSql(uid);

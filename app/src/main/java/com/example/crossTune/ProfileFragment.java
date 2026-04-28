@@ -1,5 +1,6 @@
 package com.example.crossTune;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -10,6 +11,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
@@ -61,9 +65,17 @@ public class ProfileFragment extends Fragment {
 
         // Log Out - Now moved to the menu list
         view.findViewById(R.id.btn_logout_menu).setOnClickListener(v -> {
-            mAuth.signOut();
-            Toast.makeText(getContext(), "Logged Out", Toast.LENGTH_SHORT).show();
-            // In a real app, trigger navigation to LoginActivity here
+            GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                    .requestEmail()
+                    .build();
+            GoogleSignInClient client = GoogleSignIn.getClient(requireContext(), gso);
+            client.signOut().addOnCompleteListener(task -> {
+                FirebaseAuth.getInstance().signOut();
+                navigateToLogin();
+            }).addOnFailureListener(err -> {
+                FirebaseAuth.getInstance().signOut();
+                navigateToLogin();
+            });
         });
     }
 
@@ -84,5 +96,11 @@ public class ProfileFragment extends Fragment {
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
+    }
+
+    private void navigateToLogin() {
+        Intent intent = new Intent(requireContext(), LoginActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
     }
 }

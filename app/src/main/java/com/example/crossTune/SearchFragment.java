@@ -105,7 +105,7 @@ public class SearchFragment extends Fragment {
         initViews(view);
         setupAdapters();
         setupListeners();
-        setupMoodPivotObserver();
+        // setupMoodPivotObserver(); // Disabled: no mood-based playlist switching.
 
         // Trigger the Dopamine Discovery Engine
         loadIntelligentDiscoverFeed();
@@ -234,6 +234,8 @@ public class SearchFragment extends Fragment {
     }
 
     private void executeMoodPivot() {
+        // Mood pivot disabled: leaving this method as a no-op by request.
+        /*
         networkExecutor.submit(() -> {
             try {
                 // If it's Night, switch to high energy. If Morning, switch to chill. Opposite to break boredom.
@@ -248,6 +250,7 @@ public class SearchFragment extends Fragment {
                 }
             } catch (Exception e) { Log.e("MoodPivot", "Failed to pivot", e); }
         });
+        */
     }
 
     // =========================================================
