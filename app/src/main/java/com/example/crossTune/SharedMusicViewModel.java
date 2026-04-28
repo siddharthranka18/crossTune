@@ -405,9 +405,9 @@ public class SharedMusicViewModel extends AndroidViewModel {
     public void toggleLike(Song song) {
         List<Playlist> current = playlists.getValue();
         if (current == null) return;
+        boolean removed = false;
         for (Playlist p : current) {
             if (p.getId().equals("liked")) {
-                boolean removed = false;
                 for (int i = 0; i < p.getSongs().size(); i++) {
                     if (p.getSongs().get(i).getId().equals(song.getId())) {
                         p.getSongs().remove(i); removed = true; break;
@@ -418,6 +418,41 @@ public class SharedMusicViewModel extends AndroidViewModel {
             }
         }
         playlists.setValue(current); savePlaylists(current);
+
+        if (removed) removeLikedSongFromDb(song);
+    }
+
+    // Only deletes from the liked playlist (no removals for other playlists)
+    public void removeSongFromLiked(Song song) {
+        if (song == null) return;
+        List<Playlist> current = playlists.getValue();
+        if (current == null) return;
+        boolean removed = false;
+        for (Playlist p : current) {
+            if (p.getId().equals("liked")) {
+                for (int i = 0; i < p.getSongs().size(); i++) {
+                    if (p.getSongs().get(i).getId().equals(song.getId())) {
+                        p.getSongs().remove(i); removed = true; break;
+                    }
+                }
+                break;
+            }
+        }
+        if (removed) {
+            playlists.setValue(current);
+            savePlaylists(current);
+            removeLikedSongFromDb(song);
+        }
+    }
+
+    private void removeLikedSongFromDb(Song song) {
+        if (song == null || song.getId() == null) return;
+        String deleteSql = String.format(
+                "DELETE FROM PlaylistSongs WHERE PlaylistID=%s AND SongID=%s;",
+                sqlSafe("liked"),
+                sqlSafe(song.getId())
+        );
+        DB.execute(deleteSql);
     }
 
     public boolean isSongLiked(String id) {
@@ -523,3 +558,4 @@ public class SharedMusicViewModel extends AndroidViewModel {
         } catch (Exception e) { Log.e("ViewModel", "Load Failed", e); }
     }
 }
+
