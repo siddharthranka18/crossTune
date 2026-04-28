@@ -13,6 +13,9 @@ import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -38,6 +41,8 @@ public class SharedMusicViewModel extends AndroidViewModel {
     // ================= CORE PLAYBACK STATE =================
     private final MutableLiveData<Song> currentSong = new MutableLiveData<>();
     private final MutableLiveData<Boolean> isPlaying = new MutableLiveData<>(false);
+
+    FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
     private final MutableLiveData<String> accentColor = new MutableLiveData<>();
     private final MutableLiveData<List<Playlist>> playlists = new MutableLiveData<>(new ArrayList<>());
 
@@ -307,25 +312,94 @@ public class SharedMusicViewModel extends AndroidViewModel {
     private void loadAccentColor() { accentColor.setValue(sharedPreferences.getString(KEY_ACCENT_COLOR, "#FFFFFF")); }
 
     public LiveData<List<Playlist>> getPlaylists() { return playlists; }
+
+    private String escape(String data) {
+        if (data == null) return "";
+        return data.replace("'", "''"); // Replaces ' with '' for SQL safety
+    }
     public void createPlaylist(String name) {
+        String playlistId = UUID.randomUUID().toString();
+        String userId = currentUser.getUid(); // Replace with your actual UserID logic
+
+        // 1. Local Update
         List<Playlist> current = playlists.getValue();
         if (current == null) return;
-        current.add(new Playlist(UUID.randomUUID().toString(), name, true));
-        playlists.setValue(current); savePlaylists(current);
+        current.add(new Playlist(playlistId, name, true));
+        playlists.setValue(current);
+        savePlaylists(current);
+
+        // 2. Database Export
+        String sql = String.format(
+                "INSERT INTO Playlists (PlaylistID, UserID, name, createdAt) " +
+                        "VALUES ('%s', '%s', '%s', NOW());",
+                playlistId, userId, escape(name)
+        );
+        DB.execute(sql);
+    }
+
+    private String sqlSafe(String input) {
+        if (input == null) return "NULL";
+        return "'" + input.replace("'", "''") + "'";
     }
 
     public void addSongToPlaylist(String playlistId, Song song) {
         List<Playlist> current = playlists.getValue();
         if (current == null) return;
+
         for (Playlist p : current) {
             if (p.getId().equals(playlistId)) {
+                // Check if song already exists locally
                 boolean exists = false;
-                for (Song s : p.getSongs()) { if (s.getId().equals(song.getId())) { exists = true; break; } }
-                if (!exists) p.getSongs().add(0, song);
+                for (Song s : p.getSongs()) {
+                    if (s.getId().equals(song.getId())) {
+                        exists = true;
+                        break;
+                    }
+                }
+
+                if (!exists) {
+                    // 1. UPDATE LOCAL UI IMMEDIATELY
+                    p.getSongs().add(0, song);
+                    playlists.setValue(current);
+                    savePlaylists(current);
+
+                    // 2. SEQUENTIAL DATABASE PUSH
+                    new Thread(() -> {
+                        try {
+                            // STEP A: Insert into SongCache first
+                            String songSql = String.format(
+                                    "INSERT IGNORE INTO SongCache (SongID, title, artist, album, durationSec, artworkUrl) " +
+                                            "VALUES (%s, %s, %s, %s, %d, %s);",
+                                    sqlSafe(song.getId()),
+                                    sqlSafe(song.getTitle()),
+                                    sqlSafe(song.getArtist()),
+                                    sqlSafe(song.getAlbum()),
+                                    song.getDuration(),
+                                    sqlSafe(song.getThumbnailUrl())
+                            );
+                            DB.execute(songSql);
+
+                            // --- THE 2 SECOND SAFETY BUFFER ---
+                            Thread.sleep(2000);
+
+                            // STEP B: Link to Playlist after the delay
+                            String linkSql = String.format(
+                                    "INSERT INTO PlaylistSongs (PlaylistID, SongID, addedAt) " +
+                                            "VALUES (%s, %s, NOW()) " +
+                                            "ON DUPLICATE KEY UPDATE addedAt = NOW();",
+                                    sqlSafe(playlistId),
+                                    sqlSafe(song.getId())
+                            );
+                            DB.execute(linkSql);
+
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }).start();
+                }
                 break;
             }
         }
-        playlists.setValue(current); savePlaylists(current);
     }
 
     public void toggleLike(Song song) {
