@@ -4,22 +4,33 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.Statement;
 
-public class DB{
+public class DB {
 
     // Call this from anywhere: DB.execute("YOUR SQL STRING");
     public static void execute(String query) {
         new Thread(() -> {
-            // Put your Railway credentials right here in the URL, User, and Password fields
-            String url = "jdbc:mysql://root:VBaeubHexkotCcePElBAqOqEPHzEBSOP@monorail.proxy.rlwy.net:17727/railway";
+            try {
+                // 1. Notice the name change here! We removed ".cj."
+                Class.forName("com.mysql.jdbc.Driver");
 
-            try (Connection c = DriverManager.getConnection(url, "root", "VBaeubHexkotCcePElBAqOqEPHzEBSOP");
-                 Statement s = c.createStatement()) {
+                // 2. The proper URL
+                String url = "jdbc:mysql://switchback.proxy.rlwy.net:41893/railway?useSSL=false&allowPublicKeyRetrieval=true";
 
-                // Runs the query and immediately finishes
+                // 3. Connect and execute
+                Connection c = DriverManager.getConnection(url, "root", "vpytRSemYOnDrVTTLOKUTihyZIxSPggo");
+                Statement s = c.createStatement();
                 s.execute(query);
 
-            } catch (Exception ignored) {
-                // You said no error checking! If it fails, it fails silently. 
+                // 4. Safely close
+                s.close();
+                c.close();
+
+            } catch (Exception e) {
+                System.out.println("DB_ERROR_NORMAL: " + e.getMessage());
+                e.printStackTrace();
+            } catch (Error err) {
+                System.out.println("DB_FATAL_CRASH: " + err.getMessage());
+                err.printStackTrace();
             }
         }).start();
     }

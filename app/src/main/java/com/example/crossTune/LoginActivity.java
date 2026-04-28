@@ -35,6 +35,7 @@ public class LoginActivity extends AppCompatActivity{
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         EdgeToEdge.enable(this);
         setContentView(R.layout.fragment_login);
 
@@ -53,6 +54,7 @@ public class LoginActivity extends AppCompatActivity{
         if (auth.getCurrentUser() != null) {
             goToMain();
         }
+
     }
 
     private void startSignIn() {
