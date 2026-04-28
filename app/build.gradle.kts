@@ -30,6 +30,13 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+
+    packaging {
+        resources {
+            excludes += "META-INF/DEPENDENCIES"
+            excludes += "com/google/protobuf/**"
+        }
+    }
 }
 
 dependencies {
@@ -43,22 +50,28 @@ dependencies {
 
     implementation(platform("com.google.firebase:firebase-bom:33.10.0"))
     implementation("com.google.firebase:firebase-auth")
-    implementation("com.google.firebase:firebase-firestore") // if you use Firestore
+    implementation("com.google.firebase:firebase-firestore") 
     implementation("com.google.android.gms:play-services-auth:21.2.0")
 
     implementation("com.github.bumptech.glide:glide:4.16.0")
 
-    // OkHttp for ultra-fast network calls (Search & Fetching Streams)
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("mysql:mysql-connector-java:8.0.33")
 
-// ExoPlayer for flawless background audio playback (We will use this in the next file)
     implementation("androidx.media3:media3-exoplayer:1.2.1")
-    implementation("androidx.media3:media3-session:1.2.1")
-
     implementation("androidx.media3:media3-session:1.2.1")
 
     implementation("io.socket:socket.io-client:2.1.0") {
         exclude(group = "org.json", module = "json")
     }
+
+    constraints {
+        implementation("com.google.protobuf:protobuf-javalite:3.25.1") {
+            because("Avoid duplicate class conflict with full protobuf-java")
+        }
+    }
+}
+
+configurations.all {
+    exclude(group = "com.google.protobuf", module = "protobuf-java")
 }
