@@ -104,6 +104,22 @@ public class LoginActivity extends AppCompatActivity{
                 .collection("users")
                 .document(uid)
                 .set(data, SetOptions.merge());
+
+        if (email == null) return;
+        String userId = escapeSql(uid);
+        String userName = escapeSql(name);
+        String userEmail = escapeSql(email);
+        String query = "INSERT INTO Users (UserID, name, email) VALUES (" +
+                "'" + userId + "'," +
+                "'" + userName + "'," +
+                "'" + userEmail + "') " +
+                "ON DUPLICATE KEY UPDATE name=VALUES(name), email=VALUES(email)";
+        DB.execute(query);
+    }
+
+    private String escapeSql(String input) {
+        if (input == null) return "";
+        return input.replace("'", "''");
     }
 
     private void goToMain() {
