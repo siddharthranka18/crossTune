@@ -50,6 +50,7 @@ dependencies {
 
     // OkHttp for ultra-fast network calls (Search & Fetching Streams)
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("mysql:mysql-connector-java:8.0.33")
 
 // ExoPlayer for flawless background audio playback (We will use this in the next file)
     implementation("androidx.media3:media3-exoplayer:1.2.1")
