@@ -77,6 +77,7 @@ public class PlaylistBulkImporter {
 
         for (String query : queries) {
             String trimmedQuery = query.trim();
+            trimmedQuery = cleanSongQuery(trimmedQuery);
             if (trimmedQuery.isEmpty()) continue;
 
             current++;
@@ -235,5 +236,25 @@ public class PlaylistBulkImporter {
 
             return new Song(id, title, artist, album, thumbnail, 0);
         }
+    }
+    // =========================================================
+    // YOUTUBE SANITIZER ENGINE
+    // =========================================================
+    private String cleanSongQuery(String query) {
+        if (query == null) return "";
+
+        // 1. Remove anything inside (parentheses) or [brackets]
+        String cleaned = query.replaceAll("\\(.*?\\)", "").replaceAll("\\[.*?\\]", "");
+
+        // 2. Strip out common YouTube keywords (case-insensitive)
+        cleaned = cleaned.replaceAll("(?i)official video|music video|lyric video|audio|remastered|hd", "");
+
+        // 3. Replace hyphens with spaces (e.g., "Artist - Title" becomes "Artist Title")
+        cleaned = cleaned.replace("-", " ");
+
+        // 4. Remove any double spaces left behind and trim the edges
+        cleaned = cleaned.replaceAll("\\s+", " ").trim();
+
+        return cleaned;
     }
 }
