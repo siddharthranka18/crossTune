@@ -559,4 +559,36 @@ public class SharedMusicViewModel extends AndroidViewModel {
             playlists.setValue(loaded);
         } catch (Exception e) { Log.e("ViewModel", "Load Failed", e); }
     }
+
+    public interface DeletionCallback {
+        void onComplete(boolean success);
+    }
+
+    public void deleteCurrentUserData(DeletionCallback callback) {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) {
+            if (callback != null) callback.onComplete(false);
+            return;
+        }
+
+        Executors.newSingleThreadExecutor().execute(() -> {
+            boolean success = DB.deleteUserDataTransactional(user.getUid());
+            if (success) {
+                sharedPreferences.edit()
+                        .remove(KEY_PLAYLISTS)
+                        .remove(KEY_TELEMETRY_AFFINITY)
+                        .remove(KEY_TELEMETRY_HISTORY)
+                        .apply();
+
+                List<Playlist> reset = new ArrayList<>();
+                reset.add(new Playlist("liked", "Liked Songs", false));
+                reset.add(new Playlist("downloads", "Downloads", false));
+                playlists.postValue(reset);
+            }
+
+            new Handler(Looper.getMainLooper()).post(() -> {
+                if (callback != null) callback.onComplete(success);
+            });
+        });
+    }
 }

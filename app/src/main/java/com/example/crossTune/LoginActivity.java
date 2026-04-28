@@ -116,7 +116,11 @@ public class LoginActivity extends AppCompatActivity{
                 "'" + userName + "'," +
                 "'" + userEmail + "') " +
                 "ON DUPLICATE KEY UPDATE name=VALUES(name), email=VALUES(email)";
-        DB.execute(query);
+
+        new Thread(() -> {
+            DB.syncUserIdByEmail(uid, email);
+            DB.executeSync(query);
+        }).start();
     }
 
     private String escapeSql(String input) {

@@ -5,6 +5,7 @@ import android.os.Looper;
 import android.util.Log;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
@@ -74,6 +75,99 @@ public class DB {
                 e.printStackTrace();
             }
         }).start();
+    }
+
+    public static boolean deleteUserDataTransactional(String userId) {
+        if (userId == null || userId.trim().isEmpty()) return false;
+        Connection c = null;
+        try {
+            loadDriver();
+            c = DriverManager.getConnection(URL, USER, PASS);
+            c.setAutoCommit(false);
+
+            try (PreparedStatement deletePlaylistSongs = c.prepareStatement(
+                         "DELETE ps FROM PlaylistSongs ps JOIN Playlists p ON ps.PlaylistID = p.PlaylistID WHERE p.UserID = ?");
+                 PreparedStatement deletePlaylists = c.prepareStatement(
+                         "DELETE FROM Playlists WHERE UserID = ?");
+                 PreparedStatement deleteUser = c.prepareStatement(
+                         "DELETE FROM Users WHERE UserID = ?")) {
+
+                deletePlaylistSongs.setString(1, userId);
+                deletePlaylistSongs.executeUpdate();
+
+                deletePlaylists.setString(1, userId);
+                deletePlaylists.executeUpdate();
+
+                deleteUser.setString(1, userId);
+                deleteUser.executeUpdate();
+            }
+
+            c.commit();
+            return true;
+        } catch (Exception e) {
+            try {
+                if (c != null) c.rollback();
+            } catch (Exception rollbackError) {
+                Log.e("DB", "Rollback failed", rollbackError);
+            }
+            Log.e("DB", "Transaction failed", e);
+            return false;
+        } finally {
+            try {
+                if (c != null) c.close();
+            } catch (Exception closeError) {
+                Log.e("DB", "Connection close failed", closeError);
+            }
+        }
+    }
+
+    public static void syncUserIdByEmail(String uid, String email) {
+        if (uid == null || uid.trim().isEmpty() || email == null || email.trim().isEmpty()) return;
+        Connection c = null;
+        try {
+            loadDriver();
+            c = DriverManager.getConnection(URL, USER, PASS);
+            c.setAutoCommit(false);
+
+            String oldUserId = null;
+            try (PreparedStatement findUser = c.prepareStatement("SELECT UserID FROM Users WHERE email = ?")) {
+                findUser.setString(1, email);
+                try (ResultSet rs = findUser.executeQuery()) {
+                    if (rs.next()) oldUserId = rs.getString("UserID");
+                }
+            }
+
+            if (oldUserId != null && !oldUserId.equals(uid)) {
+                try (PreparedStatement updatePlaylists = c.prepareStatement(
+                             "UPDATE Playlists SET UserID = ? WHERE UserID = ?");
+                     PreparedStatement updateUser = c.prepareStatement(
+                             "UPDATE Users SET UserID = ? WHERE email = ?")) {
+
+                    updatePlaylists.setString(1, uid);
+                    updatePlaylists.setString(2, oldUserId);
+                    updatePlaylists.executeUpdate();
+
+                    updateUser.setString(1, uid);
+                    updateUser.setString(2, email);
+                    updateUser.executeUpdate();
+                }
+            }
+
+            c.commit();
+        } catch (Exception e) {
+            try {
+                if (c != null) c.rollback();
+            } catch (Exception rollbackError) {
+                Log.e("DB", "Rollback failed", rollbackError);
+            }
+            Log.e("DB", "Sync user ID failed", e);
+        } finally {
+            try {
+                if (c != null) c.close();
+            } catch (Exception closeError) {
+                Log.e("DB", "Connection close failed", closeError);
+            }
+        }
     }
 
     private static void loadDriver() throws ClassNotFoundException {

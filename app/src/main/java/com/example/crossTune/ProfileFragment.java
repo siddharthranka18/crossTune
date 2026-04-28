@@ -7,10 +7,12 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
@@ -21,6 +23,7 @@ public class ProfileFragment extends Fragment {
 
     private TextView tvName, tvEmail;
     private FirebaseAuth mAuth;
+    private SharedMusicViewModel musicViewModel;
 
     @Nullable
     @Override
@@ -34,6 +37,7 @@ public class ProfileFragment extends Fragment {
 
         mAuth = FirebaseAuth.getInstance();
         FirebaseUser user = mAuth.getCurrentUser();
+        musicViewModel = new ViewModelProvider(requireActivity()).get(SharedMusicViewModel.class);
 
         tvName = view.findViewById(R.id.tv_profile_name);
         tvEmail = view.findViewById(R.id.tv_profile_email);
@@ -88,11 +92,26 @@ public class ProfileFragment extends Fragment {
     }
 
     private void showDeleteConfirmation() {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        String uid = user != null ? user.getUid() : null;
+        String message = "This action is permanent. It will trigger a SQL TRANSACTION to delete your User profile, Playlists, and Song History all at once (ACID property).";
+        if (uid != null) message += "\n\nUID: " + uid;
+
         new AlertDialog.Builder(requireContext())
                 .setTitle("Delete Account?")
-                .setMessage("This action is permanent. It will trigger a SQL TRANSACTION to delete your User profile, Playlists, and Song History all at once (ACID property).")
+                .setMessage(message)
                 .setPositiveButton("Delete Everything", (dialog, which) -> {
+                    if (uid != null) Log.d("ProfileFragment", "Delete UID: " + uid);
                     Toast.makeText(getContext(), "Transaction Initiated...", Toast.LENGTH_SHORT).show();
+                    musicViewModel.deleteCurrentUserData(success -> {
+                        if (success) {
+                            FirebaseAuth.getInstance().signOut();
+                            Toast.makeText(getContext(), "Account deleted", Toast.LENGTH_SHORT).show();
+                            navigateToLogin();
+                        } else {
+                            Toast.makeText(getContext(), "Delete failed. Please try again.", Toast.LENGTH_LONG).show();
+                        }
+                    });
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
