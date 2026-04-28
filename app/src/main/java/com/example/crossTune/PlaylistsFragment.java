@@ -120,13 +120,77 @@ public class PlaylistsFragment extends Fragment {
     private void showCreateDialog() {
         EditText input = new EditText(getContext());
         input.setTextColor(Color.WHITE);
+        input.setHint("Playlist Name, Apple or YT Link"); // Updated hint
+        input.setHintTextColor(Color.parseColor("#5E6168"));
 
         new AlertDialog.Builder(getContext(), android.R.style.Theme_DeviceDefault_Dialog_Alert)
                 .setTitle("New Playlist")
                 .setView(input)
                 .setPositiveButton("Create", (dialog, which) -> {
                     String name = input.getText().toString().trim();
-                    if (!name.isEmpty()) musicViewModel.createPlaylist(name);
+
+                    // ==========================================
+                    // 1. APPLE MUSIC DETECTED
+                    // ==========================================
+                    if (name.contains("apple")) {
+                        Toast.makeText(getContext(), "Fetching Apple Playlist...", Toast.LENGTH_SHORT).show();
+                        Apple.fetchApplePlaylist(name, new Apple.AppleCallback() {
+                            @Override
+                            public void onSuccess(String playlistName, String rawSongsText) {
+                                PlaylistBulkImporter importer = new PlaylistBulkImporter(musicViewModel);
+                                importer.importSongsToNewPlaylist(playlistName, rawSongsText, new PlaylistBulkImporter.ImportCallback() {
+                                    @Override
+                                    public void onProgress(int current, int total, String songName) {}
+                                    @Override
+                                    public void onComplete() {
+                                        if (getActivity() != null) getActivity().runOnUiThread(() -> Toast.makeText(getContext(), "Imported: " + playlistName, Toast.LENGTH_LONG).show());
+                                    }
+                                    @Override
+                                    public void onError(String error) {
+                                        if (getActivity() != null) getActivity().runOnUiThread(() -> Toast.makeText(getContext(), "Import Error: " + error, Toast.LENGTH_LONG).show());
+                                    }
+                                });
+                            }
+                            @Override
+                            public void onError(String errorMsg) {
+                                if (getActivity() != null) getActivity().runOnUiThread(() -> Toast.makeText(getContext(), "Failed: " + errorMsg, Toast.LENGTH_LONG).show());
+                            }
+                        });
+                    }
+                    // ==========================================
+                    // 2. YOUTUBE MUSIC DETECTED
+                    // ==========================================
+                    else if (name.contains("youtube") || name.contains("youtu.be")) {
+                        Toast.makeText(getContext(), "Fetching YouTube Playlist...", Toast.LENGTH_SHORT).show();
+                        Youtube.fetchYoutubePlaylist(name, new Youtube.YoutubeCallback() {
+                            @Override
+                            public void onSuccess(String playlistName, String rawSongsText) {
+                                PlaylistBulkImporter importer = new PlaylistBulkImporter(musicViewModel);
+                                importer.importSongsToNewPlaylist(playlistName, rawSongsText, new PlaylistBulkImporter.ImportCallback() {
+                                    @Override
+                                    public void onProgress(int current, int total, String songName) {}
+                                    @Override
+                                    public void onComplete() {
+                                        if (getActivity() != null) getActivity().runOnUiThread(() -> Toast.makeText(getContext(), "Imported: " + playlistName, Toast.LENGTH_LONG).show());
+                                    }
+                                    @Override
+                                    public void onError(String error) {
+                                        if (getActivity() != null) getActivity().runOnUiThread(() -> Toast.makeText(getContext(), "Import Error: " + error, Toast.LENGTH_LONG).show());
+                                    }
+                                });
+                            }
+                            @Override
+                            public void onError(String errorMsg) {
+                                if (getActivity() != null) getActivity().runOnUiThread(() -> Toast.makeText(getContext(), "Failed: " + errorMsg, Toast.LENGTH_LONG).show());
+                            }
+                        });
+                    }
+                    // ==========================================
+                    // 3. STANDARD PLAYLIST CREATION
+                    // ==========================================
+                    else if (!name.isEmpty()) {
+                        musicViewModel.createPlaylist(name);
+                    }
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
