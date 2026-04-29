@@ -71,10 +71,8 @@ public class PlaylistsFragment extends Fragment {
             if (currentActivePlaylist != null) {
                 musicViewModel.playSongWithContext(song, currentActivePlaylist.getSongs(), currentActivePlaylist.getName());
 
-                // Open the full screen player dynamically
-                if (getActivity() instanceof MainActivity) {
-                    ((MainActivity) getActivity()).openFullScreenPlayer();
-                }
+                // Don't auto-open the full player - let users click the bottom bar if they want
+                // This prevents animation state issues when the app is backgrounded
             }
         });
         rvPlaylistSongs.setAdapter(songAdapter);

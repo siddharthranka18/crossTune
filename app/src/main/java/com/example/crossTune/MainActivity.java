@@ -357,6 +357,7 @@ public class MainActivity extends AppCompatActivity {
                 .setInterpolator(new FastOutSlowInInterpolator())
                 .start();
 
+
         // Fade out the bottom bar so it seamlessly transitions into the full player
         bottomPlayerBar.animate().alpha(0f).setDuration(250).start();
     }

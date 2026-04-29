@@ -149,9 +149,8 @@ public class SearchFragment extends Fragment {
         // SSOT handles all routing flawlessly. Just pass it to the Context Engine.
         musicViewModel.playSongWithContext(song, contextList, contextName);
 
-        if (getActivity() instanceof MainActivity) {
-            ((MainActivity) getActivity()).openFullScreenPlayer();
-        }
+        // Don't auto-open the full player - let users click the bottom bar if they want to open it
+        // This prevents animation state issues when the app is backgrounded
     }
 
     private void setupListeners() {
