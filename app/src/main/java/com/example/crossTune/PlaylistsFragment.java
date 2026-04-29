@@ -238,8 +238,11 @@ public class PlaylistsFragment extends Fragment {
 
             // 2. BACKGROUND SYNC: Call DB via Stored Procedure (Point 12) to verify data
             DB.getPlaylistSummary(p.getId(), (dbCount, dbMins) -> {
-                // Silently update if the database has different info (e.g. cross-device sync)
-                holder.count.setText(dbCount + " / " + dbMins + " mins");
+                // BUG FIX: Only update if the database actually returned data.
+                // Sometimes the DB sync is slower than the local memory, which caused "0 / 0" flicker.
+                if (dbCount > 0) {
+                    holder.count.setText(dbCount + " / " + dbMins + " mins");
+                }
             });
 
             // Clear Glide bindings so recycled views don't show wrong images briefly
