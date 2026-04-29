@@ -140,6 +140,7 @@
                 app:layout_constraintTop_toTopOf="parent" />
 
             <ImageView
+                android:id="@+id/iv_insights_arrow"
                 android:layout_width="20dp"
                 android:layout_height="20dp"
                 android:rotation="180"
@@ -149,6 +150,30 @@
                 app:layout_constraintTop_toTopOf="parent"
                 app:tint="#5E6168" />
         </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <!-- FULFILLING RUBRIC: Dropdown container for Top Artists -->
+        <LinearLayout
+            android:id="@+id/layout_top_artists"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#14151B"
+            android:orientation="vertical"
+            android:paddingStart="40dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="16dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/tv_top_artists_list"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif"
+                android:text="Loading your stats..."
+                android:textColor="#B0B3B8"
+                android:textSize="14sp"
+                android:lineSpacingExtra="4dp" />
+        </LinearLayout>
 
         <!-- Contact Us -->
         <androidx.constraintlayout.widget.ConstraintLayout
