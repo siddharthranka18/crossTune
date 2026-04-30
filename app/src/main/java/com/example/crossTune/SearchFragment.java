@@ -62,10 +62,9 @@ public class SearchFragment extends Fragment {
     private SongAdapter searchAdapter;
     private DiscoverAdapter trendingAdapter, topPicksAdapter, curatedAdapter;
 
-    // Architecture & Intelligence
+    // Architecture
     private SharedMusicViewModel musicViewModel;
     private final Handler mainThreadHandler = new Handler(Looper.getMainLooper());
-    private SharedPreferences sharedPreferences;
 
     // SSOT Network Engine
     private final ExecutorService networkExecutor = Executors.newFixedThreadPool(4);
@@ -83,7 +82,7 @@ public class SearchFragment extends Fragment {
     private boolean isFetchingMore = false;
     private boolean hasMoreResults = true;
 
-    // INTELLIGENCE MEMORY LISTS
+    // UI Lists
     private List<Song> latestTrending = new ArrayList<>();
     private List<Song> latestTopPicks = new ArrayList<>();
     private List<Song> latestCurated = new ArrayList<>();
@@ -99,15 +98,11 @@ public class SearchFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // Bind to the Telemetry Engine
-        sharedPreferences = requireActivity().getSharedPreferences("MusicAppPrefs", Context.MODE_PRIVATE);
-
         initViews(view);
         setupAdapters();
         setupListeners();
-        // setupMoodPivotObserver(); // Disabled: no mood-based playlist switching.
 
-        // Trigger the Dopamine Discovery Engine
+        // Trigger the Discover Feed
         loadIntelligentDiscoverFeed();
     }
 
@@ -146,11 +141,7 @@ public class SearchFragment extends Fragment {
     }
 
     private void playSong(Song song, List<Song> contextList, String contextName) {
-        // SSOT handles all routing flawlessly. Just pass it to the Context Engine.
         musicViewModel.playSongWithContext(song, contextList, contextName);
-
-        // Don't auto-open the full player - let users click the bottom bar if they want to open it
-        // This prevents animation state issues when the app is backgrounded
     }
 
     private void setupListeners() {
@@ -219,64 +210,17 @@ public class SearchFragment extends Fragment {
         etSearchInput.clearFocus();
     }
 
-    // =========================================================
-    // THE REAL-TIME MOOD PIVOT
-    // =========================================================
-    private void setupMoodPivotObserver() {
-        musicViewModel.getMoodPivotEvent().observe(getViewLifecycleOwner(), pivotTriggered -> {
-            if (pivotTriggered != null && pivotTriggered) {
-                Toast.makeText(getContext(), "Reading your mind. Changing the vibe...", Toast.LENGTH_SHORT).show();
-                executeMoodPivot();
-                musicViewModel.resetMoodPivot();
-            }
-        });
-    }
-
-    private void executeMoodPivot() {
-        // Mood pivot disabled: leaving this method as a no-op by request.
-        /*
-        networkExecutor.submit(() -> {
-            try {
-                // If it's Night, switch to high energy. If Morning, switch to chill. Opposite to break boredom.
-                String vibe = SharedMusicViewModel.getCurrentTimeBucket().equals("Night") ? "upbeat energy hype" : "lofi chill relax";
-                List<Song> pivotSongs = fetchFromJioSaavnOfficial(vibe, 1);
-
-                if (!pivotSongs.isEmpty()) {
-                    mainThreadHandler.post(() -> {
-                        musicViewModel.playSongWithContext(pivotSongs.get(0), pivotSongs, "Mood Pivot");
-                        if (getActivity() instanceof MainActivity) ((MainActivity) getActivity()).openFullScreenPlayer();
-                    });
-                }
-            } catch (Exception e) { Log.e("MoodPivot", "Failed to pivot", e); }
-        });
-        */
-    }
-
-    // =========================================================
-    // THE DOPAMINE DISCOVERY ENGINE
-    // =========================================================
     private void loadIntelligentDiscoverFeed() {
         networkExecutor.submit(() -> {
             try {
-                // 1. YOUR HEAVY ROTATION (Directly from Telemetry Engine)
-                List<Song> fetchedHeavyRotation = getHistoryFromTelemetry();
-                if (fetchedHeavyRotation.isEmpty()) {
-                    fetchedHeavyRotation = fetchFromJioSaavnOfficial(SharedMusicViewModel.getCurrentTimeBucket() + " vibes", 1);
-                }
-
-                // Lock it into a final variable so the Lambda is happy
-                final List<Song> finalHeavyRotation = fetchedHeavyRotation;
-
-                // 2. THE RABBIT HOLE (Exploiting highest affinity artist)
-                String topArtist = getTopAffinityArtist();
-                List<Song> curated = fetchFromJioSaavnOfficial(topArtist + " radio best", 1);
-
-                // 3. GLOBAL PULSE (Trending in the ecosystem)
-                List<Song> trending = fetchFromJioSaavnOfficial("top charts hindi english", 1);
+                // Now fetching categories directly instead of relying on telemetry history
+                List<Song> topPicks = fetchFromJioSaavnOfficial("latest top hits", 1);
+                List<Song> curated = fetchFromJioSaavnOfficial("lofi chill study", 1);
+                List<Song> trending = fetchFromJioSaavnOfficial("trending charts", 1);
 
                 mainThreadHandler.post(() -> {
                     if (isAdded()) {
-                        latestTopPicks = finalHeavyRotation;
+                        latestTopPicks = topPicks;
                         latestCurated = curated;
                         latestTrending = trending;
 
@@ -289,67 +233,6 @@ public class SearchFragment extends Fragment {
         });
     }
 
-    // =========================================================
-    // TELEMETRY READERS
-    // =========================================================
-    private List<Song> getHistoryFromTelemetry() {
-        List<Song> history = new ArrayList<>();
-        try {
-            // ANTI-TRUNCATION TRICK applied here
-            String fallbackJsonArray = "[ ]";
-            String jsonStr = sharedPreferences.getString("TelemetryHistoryDB", fallbackJsonArray);
-
-            JSONArray arr = new JSONArray(jsonStr);
-
-            // Limit to top 15 so UI stays buttery smooth
-            int limit = Math.min(arr.length(), 15);
-            for (int i = 0; i < limit; i++) {
-                JSONObject obj = arr.getJSONObject(i);
-                Song song = new Song(
-                        obj.getString("id"),
-                        obj.getString("title"),
-                        obj.getString("artist"),
-                        obj.optString("album", "Unknown Album"),
-                        obj.getString("thumbnailUrl"),
-                        obj.optLong("duration", 0)
-                );
-
-                // Carry over the stream URL to guarantee instant 0-latency playback
-                if (obj.has("streamUrl")) {
-                    song.setStreamUrl(obj.getString("streamUrl"));
-                }
-
-                history.add(song);
-            }
-        } catch (Exception e) { Log.e("Telemetry", "Failed to parse history", e); }
-        return history;
-    }
-
-    private String getTopAffinityArtist() {
-        String topArtist = "The Weeknd"; // Fallback Artist
-        int maxScore = -1;
-        try {
-            // ANTI-TRUNCATION TRICK applied here
-            String fallbackJsonObject = "{ }";
-            String jsonStr = sharedPreferences.getString("TelemetryAffinityDB", fallbackJsonObject);
-            JSONObject obj = new JSONObject(jsonStr);
-
-            Iterator<String> keys = obj.keys();
-            while (keys.hasNext()) {
-                String artist = keys.next();
-                int score = obj.getInt(artist);
-                if (score > maxScore) {
-                    maxScore = score;
-                    topArtist = artist;
-                }
-            }
-        } catch (Exception e) { Log.e("Telemetry", "Failed to parse affinity", e); }
-        return topArtist;
-    }
-
-    // =========================================================
-    // THE INFINITE SSOT SEARCH ENGINE
-    // =========================================================
     private void initiateSearch() {
         String query = etSearchInput.getText().toString().trim();
         if (query.isEmpty()) return;
@@ -362,7 +245,7 @@ public class SearchFragment extends Fragment {
         showSearchState();
         latestSearchResults.clear();
         searchAdapter.setSongs(new ArrayList<>());
-        etSearchInput.setHint("Intercepting JioSaavn Nodes...");
+        etSearchInput.setHint("Searching...");
 
         executeSearchTask(currentSearchQuery, currentSearchPage, false);
     }
@@ -379,7 +262,6 @@ public class SearchFragment extends Fragment {
 
         activeSearchFuture = networkExecutor.submit(() -> {
             try {
-                // We only fetch from JioSaavn now. 100% deterministic SSOT.
                 List<Song> results = fetchFromJioSaavnOfficial(query, page);
 
                 mainThreadHandler.post(() -> {
@@ -404,8 +286,8 @@ public class SearchFragment extends Fragment {
                         pbInfiniteLoading.setVisibility(View.GONE);
                         isFetchingMore = false;
                         if (!isAppending) {
-                            etSearchInput.setHint("Search exhausted. Check internet.");
-                            Toast.makeText(getContext(), "All systems failed. Check your network.", Toast.LENGTH_LONG).show();
+                            etSearchInput.setHint("Search failed.");
+                            Toast.makeText(getContext(), "Check your network.", Toast.LENGTH_LONG).show();
                         } else {
                             hasMoreResults = false;
                         }
@@ -415,25 +297,14 @@ public class SearchFragment extends Fragment {
         });
     }
 
-    // =========================================================
-    // TRIPLE-REDUNDANT EXTRACTION NODE (Bulletproof SSOT)
-    // =========================================================
     private List<Song> fetchFromJioSaavnOfficial(String query, int page) throws Exception {
         String safeQuery = URLEncoder.encode(query, "UTF-8");
-
-        // 1. Try Primary Unofficial API (Pre-caches 320kbps URLs)
         try {
             return parseUnofficialAPI("https://saavn.dev/api/search/songs?query=" + safeQuery + "&page=" + page + "&limit=25");
         } catch (Exception e1) {
-            Log.e("SSOTSearch", "Primary API failed", e1);
-
-            // 2. Try Backup Unofficial API
             try {
                 return parseUnofficialAPI("https://jiosaavn-api-privatecvc2.vercel.app/search/songs?query=" + safeQuery + "&page=" + page + "&limit=25");
             } catch (Exception e2) {
-                Log.e("SSOTSearch", "Backup API failed", e2);
-
-                // 3. Absolute Fallback: Official JioSaavn API (Will never go down)
                 return parseOfficialAPI(query, page);
             }
         }
@@ -445,7 +316,6 @@ public class SearchFragment extends Fragment {
             if (!response.isSuccessful()) throw new Exception("HTTP " + response.code());
             JSONObject json = new JSONObject(response.body().string());
 
-            // Handle dynamically changing JSON structures from different wrapper versions
             JSONArray results = null;
             if (json.has("data")) {
                 Object dataObj = json.get("data");
@@ -494,7 +364,6 @@ public class SearchFragment extends Fragment {
 
                 Song song = new Song(id, title, artist, album, thumbnail, duration);
 
-                // PRE-CACHE STREAM URL for 0ms playback
                 if (item.has("downloadUrl")) {
                     Object dlObj = item.get("downloadUrl");
                     if (dlObj instanceof JSONArray) {
@@ -507,7 +376,6 @@ public class SearchFragment extends Fragment {
                 }
                 songs.add(song);
             }
-            if (songs.isEmpty()) throw new Exception("No songs parsed");
             return songs;
         }
     }
@@ -523,7 +391,7 @@ public class SearchFragment extends Fragment {
         try (Response response = httpClient.newCall(request).execute()) {
             if (!response.isSuccessful()) throw new Exception("Official API HTTP " + response.code());
             JSONObject json = new JSONObject(response.body().string());
-            if (!json.has("results")) throw new Exception("No results found in Official API");
+            if (!json.has("results")) throw new Exception("No results found");
             JSONArray data = json.getJSONArray("results");
 
             List<Song> songs = new ArrayList<>();
@@ -548,14 +416,10 @@ public class SearchFragment extends Fragment {
                 Song song = new Song(id, title, artist, album, thumbnail, 0);
                 songs.add(song);
             }
-            if (songs.isEmpty()) throw new Exception("No valid songs found");
             return songs;
         }
     }
 
-    // =========================================================
-    // INTERNAL ADAPTER FOR DISCOVER CARDS
-    // =========================================================
     private static class DiscoverAdapter extends RecyclerView.Adapter<DiscoverAdapter.Holder> {
         private List<Song> list = new ArrayList<>();
         private final SongAdapter.OnSongClickListener listener;

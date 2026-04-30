@@ -51,11 +51,6 @@ public class SharedMusicViewModel extends AndroidViewModel {
     private final List<Song> currentQueue = new ArrayList<>();
     private int currentQueueIndex = -1;
 
-    // ================= THE TELEMETRY BRAIN (NEW) =================
-    private long currentSongStartTime = 0;
-    private int rapidSkipCount = 0;
-    private final MutableLiveData<Boolean> moodPivotEvent = new MutableLiveData<>(false);
-
     // ================= JAMMING STATE =================
     private Socket mSocket;
     private final MutableLiveData<String> jamRoomCode = new MutableLiveData<>(null);
@@ -68,10 +63,6 @@ public class SharedMusicViewModel extends AndroidViewModel {
     private static final String KEY_PLAYLISTS = "PlaylistsJson";
     private static final String KEY_ACCENT_COLOR = "AppAccentColor";
 
-    // Telemetry Keys
-    private static final String KEY_TELEMETRY_AFFINITY = "TelemetryAffinityDB";
-    private static final String KEY_TELEMETRY_HISTORY = "TelemetryHistoryDB";
-
     private final OkHttpClient httpClient = new OkHttpClient();
 
     public SharedMusicViewModel(@NonNull Application application) {
@@ -80,90 +71,6 @@ public class SharedMusicViewModel extends AndroidViewModel {
         loadAccentColor();
         loadPlaylists();
         initSocket();
-    }
-
-    // ==============================================================
-    // THE TELEMETRY & MOOD PIVOT ENGINE (The Secret Sauce)
-    // ==============================================================
-
-    public LiveData<Boolean> getMoodPivotEvent() { return moodPivotEvent; }
-    public void resetMoodPivot() { moodPivotEvent.setValue(false); rapidSkipCount = 0; }
-
-    private void recordTelemetryForCurrentSong() {
-        Song prevSong = currentSong.getValue();
-        if (prevSong == null || currentSongStartTime == 0) return;
-
-        long timeListenedMs = System.currentTimeMillis() - currentSongStartTime;
-        // If duration is unknown, assume 3 mins (180,000 ms) as standard fallback
-        long totalDurationMs = prevSong.getDuration() > 0 ? (prevSong.getDuration() * 1000) : 180000;
-
-        double completionRatio = (double) timeListenedMs / totalDurationMs;
-
-        if (timeListenedMs < 15000) {
-            // THE USER HATED THIS: Rapid Skip Detected (< 15 seconds)
-            rapidSkipCount++;
-            updateArtistAffinity(prevSong.getArtist(), -5);
-
-            // Trigger Mood Pivot if 3 skips occur in a row
-            /*
-            if (rapidSkipCount >= 3) {
-                Log.d("TelemetryEngine", "Mood Pivot Triggered! User is bored.");
-                moodPivotEvent.setValue(true);
-            }
-            */
-        } else {
-            // THE USER LIKED THIS: Reset skip count
-            if (timeListenedMs > 30000) rapidSkipCount = 0;
-
-            if (completionRatio > 0.8) {
-                // Hooked: Listened to 80%+ of the song
-                updateArtistAffinity(prevSong.getArtist(), 10);
-                addToHeavyRotation(prevSong);
-            } else if (completionRatio > 0.4) {
-                // Casual Listen: 40%+
-                updateArtistAffinity(prevSong.getArtist(), 3);
-            }
-        }
-    }
-
-    private void updateArtistAffinity(String artist, int scoreDelta) {
-        if (artist == null || artist.equals("Unknown Artist") || artist.contains("Various")) return;
-        try {
-            String jsonStr = sharedPreferences.getString(KEY_TELEMETRY_AFFINITY, "{}");
-            JSONObject affinityDB = new JSONObject(jsonStr);
-
-            int currentScore = affinityDB.optInt(artist, 0);
-            int newScore = Math.max(0, currentScore + scoreDelta); // Don't drop below 0
-
-            affinityDB.put(artist, newScore);
-            sharedPreferences.edit().putString(KEY_TELEMETRY_AFFINITY, affinityDB.toString()).apply();
-        } catch (Exception e) { Log.e("TelemetryEngine", "Affinity update failed", e); }
-    }
-
-    private void addToHeavyRotation(Song song) {
-        try {
-            String jsonStr = sharedPreferences.getString(KEY_TELEMETRY_HISTORY, "[]");
-            JSONArray historyDB = new JSONArray(jsonStr);
-
-            JSONObject trackData = new JSONObject();
-            trackData.put("id", song.getId());
-            trackData.put("title", song.getTitle());
-            trackData.put("artist", song.getArtist());
-            trackData.put("thumbnailUrl", song.getThumbnailUrl());
-            trackData.put("timestamp", System.currentTimeMillis());
-
-            // Add to the front of the array
-            JSONArray updatedHistory = new JSONArray();
-            updatedHistory.put(trackData);
-
-            // Keep only the last 100 heavy rotation tracks to save memory
-            int limit = Math.min(historyDB.length(), 99);
-            for (int i = 0; i < limit; i++) {
-                updatedHistory.put(historyDB.getJSONObject(i));
-            }
-
-            sharedPreferences.edit().putString(KEY_TELEMETRY_HISTORY, updatedHistory.toString()).apply();
-        } catch (Exception e) { Log.e("TelemetryEngine", "History update failed", e); }
     }
 
     // Helper for the UI Algorithm (Returns Morning, Afternoon, Evening, or Night)
@@ -218,11 +125,6 @@ public class SharedMusicViewModel extends AndroidViewModel {
     // ================= STANDARD PLAYBACK ENGINE =================
 
     public void setSong(Song song) {
-        // 1. Process telemetry for the outgoing song BEFORE changing
-        recordTelemetryForCurrentSong();
-
-        // 2. Start tracking the new song
-        currentSongStartTime = System.currentTimeMillis();
         currentSong.setValue(song);
         isPlaying.setValue(true);
     }
@@ -576,8 +478,6 @@ public class SharedMusicViewModel extends AndroidViewModel {
             if (success) {
                 sharedPreferences.edit()
                         .remove(KEY_PLAYLISTS)
-                        .remove(KEY_TELEMETRY_AFFINITY)
-                        .remove(KEY_TELEMETRY_HISTORY)
                         .apply();
 
                 List<Playlist> reset = new ArrayList<>();

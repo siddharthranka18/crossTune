@@ -167,7 +167,7 @@ public class PlayerFragment extends Fragment {
                             tvTimeTotal.setText(formatTime(mediaController.getDuration()));
                             updatePlayPauseUI(true);
 
-                            // Feed exact duration to Telemetry DB in case API didn't provide it
+                            // Update song metadata with duration for UI display
                             if (currentActiveSong != null && currentActiveSong.getDuration() == 0) {
                                 currentActiveSong.setDuration(mediaController.getDuration() / 1000);
                             }

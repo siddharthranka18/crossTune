@@ -14,8 +14,8 @@ public class Song {
     private String streamUrl; // Caches the direct 320kbps JioSaavn URL for zero-delay playback
     private String localPath; // For Offline Downloads
 
-    // Telemetry Metadata
-    private long duration; // Stored in seconds. Crucial for the Dopamine Algorithm's completion ratio.
+    // Metadata
+    private long duration; // Stored in seconds.
 
     public Song(String id, String title, String artist, String thumbnailUrl) {
         this.id = id;
@@ -63,9 +63,9 @@ public class Song {
     public String getLocalPath() { return localPath; }
     public void setLocalPath(String localPath) { this.localPath = localPath; }
 
-    // --- INTELLIGENCE HELPERS ---
+    // --- HELPERS ---
 
-    // Allows the Queue Engine and Telemetry DB to perfectly match songs
+    // Allows the Queue Engine to perfectly match songs
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
