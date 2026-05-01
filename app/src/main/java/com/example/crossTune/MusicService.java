@@ -51,10 +51,11 @@ public class MusicService extends MediaSessionService {
     @Override
     public void onTaskRemoved(@Nullable Intent rootIntent) {
         Player player = mediaSession.getPlayer();
-        if (!player.getPlayWhenReady() || player.getMediaItemCount() == 0) {
-            // If the music is paused, allow the service to die so we don't drain battery
+//        if (!player.getPlayWhenReady() || player.getMediaItemCount() == 0) {
+//            // If the music is paused, allow the service to die so we don't drain battery
+//        }
+        //if put in if then the last music playing will first comple itself
             stopSelf();
-        }
     }
 
     @Override
