@@ -1,20 +1,19 @@
 package com.example.crossTune;
 
 import android.content.Intent;
+import android.util.Log;
 
 import androidx.annotation.Nullable;
 import androidx.media3.common.AudioAttributes;
 import androidx.media3.common.C;
+import androidx.media3.common.PlaybackException;
 import androidx.media3.common.Player;
+import androidx.media3.datasource.DefaultHttpDataSource;
 import androidx.media3.exoplayer.ExoPlayer;
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory;
 import androidx.media3.session.MediaSession;
 import androidx.media3.session.MediaSessionService;
 
-/**
- * THE BACKGROUND ENGINE
- * This service runs independently of your UI. It keeps the music playing
- * and the notification alive even if the user minimizes the app or locks the phone.
- */
 public class MusicService extends MediaSessionService {
 
     private MediaSession mediaSession;
@@ -24,38 +23,50 @@ public class MusicService extends MediaSessionService {
     public void onCreate() {
         super.onCreate();
 
-        // 1. Initialize the global background player
+        // 1. Create a DataSource Factory with a real Browser User-Agent to prevent 403/404 from JioSaavn
+        DefaultHttpDataSource.Factory httpDataSourceFactory = new DefaultHttpDataSource.Factory()
+                .setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+                .setAllowCrossProtocolRedirects(true);
+
+        // 2. Initialize the global background player with the custom factory
         player = new ExoPlayer.Builder(this)
-                .setHandleAudioBecomingNoisy(true) // Pauses automatically if headphones disconnect
+                .setMediaSourceFactory(new DefaultMediaSourceFactory(httpDataSourceFactory))
+                .setHandleAudioBecomingNoisy(true)
                 .build();
 
-        // 2. Set strict audio attributes so Android knows this is High-Priority Media
+        // 3. Set strict audio attributes
         AudioAttributes audioAttributes = new AudioAttributes.Builder()
                 .setUsage(C.USAGE_MEDIA)
                 .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
                 .build();
         player.setAudioAttributes(audioAttributes, true);
 
-        // 3. Create the MediaSession that Android will use to build the beautiful notification
+        // 4. Add global error listener to stop the session if things break
+        player.addListener(new Player.Listener() {
+            @Override
+            public void onPlayerError(PlaybackException error) {
+                Log.e("MusicService", "ExoPlayer Error: " + error.getMessage());
+                // If it's a source error (404/403), we stop and reset to prevent "ghost wiggling"
+                if (error.errorCode == PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS ||
+                    error.errorCode == PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED) {
+                    player.stop();
+                    player.clearMediaItems();
+                }
+            }
+        });
+
         mediaSession = new MediaSession.Builder(this, player).build();
     }
 
-    // This method allows your PlayerFragment to "connect" to this background service
     @Nullable
     @Override
     public MediaSession onGetSession(MediaSession.ControllerInfo controllerInfo) {
         return mediaSession;
     }
 
-    // Handles what happens when the user swipes the app away from the "Recents" menu
     @Override
     public void onTaskRemoved(@Nullable Intent rootIntent) {
-        Player player = mediaSession.getPlayer();
-//        if (!player.getPlayWhenReady() || player.getMediaItemCount() == 0) {
-//            // If the music is paused, allow the service to die so we don't drain battery
-//        }
-        //if put in if then the last music playing will first comple itself
-            stopSelf();
+        stopSelf();
     }
 
     @Override

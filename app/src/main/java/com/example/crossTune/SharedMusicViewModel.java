@@ -51,6 +51,11 @@ public class SharedMusicViewModel extends AndroidViewModel {
     private final List<Song> currentQueue = new ArrayList<>();
     private int currentQueueIndex = -1;
 
+    // ================= THE TELEMETRY BRAIN (NEW) =================
+    private long currentSongStartTime = 0;
+    private int rapidSkipCount = 0;
+    private final MutableLiveData<Boolean> moodPivotEvent = new MutableLiveData<>(false);
+
     // ================= JAMMING STATE =================
     private Socket mSocket;
     private final MutableLiveData<String> jamRoomCode = new MutableLiveData<>(null);
@@ -63,6 +68,10 @@ public class SharedMusicViewModel extends AndroidViewModel {
     private static final String KEY_PLAYLISTS = "PlaylistsJson";
     private static final String KEY_ACCENT_COLOR = "AppAccentColor";
 
+    // Telemetry Keys
+    private static final String KEY_TELEMETRY_AFFINITY = "TelemetryAffinityDB";
+    private static final String KEY_TELEMETRY_HISTORY = "TelemetryHistoryDB";
+
     private final OkHttpClient httpClient = new OkHttpClient();
 
     public SharedMusicViewModel(@NonNull Application application) {
@@ -73,7 +82,75 @@ public class SharedMusicViewModel extends AndroidViewModel {
         initSocket();
     }
 
-    // Helper for the UI Algorithm (Returns Morning, Afternoon, Evening, or Night)
+    // ==============================================================
+    // THE TELEMETRY & MOOD PIVOT ENGINE (The Secret Sauce)
+    // ==============================================================
+
+    public LiveData<Boolean> getMoodPivotEvent() { return moodPivotEvent; }
+    public void resetMoodPivot() { moodPivotEvent.setValue(false); rapidSkipCount = 0; }
+
+    private void recordTelemetryForCurrentSong() {
+        Song prevSong = currentSong.getValue();
+        if (prevSong == null || currentSongStartTime == 0) return;
+
+        long timeListenedMs = System.currentTimeMillis() - currentSongStartTime;
+        long totalDurationMs = prevSong.getDuration() > 0 ? (prevSong.getDuration() * 1000) : 180000;
+
+        double completionRatio = (double) timeListenedMs / totalDurationMs;
+
+        if (timeListenedMs < 15000) {
+            rapidSkipCount++;
+            updateArtistAffinity(prevSong.getArtist(), -5);
+        } else {
+            if (timeListenedMs > 30000) rapidSkipCount = 0;
+
+            if (completionRatio > 0.8) {
+                updateArtistAffinity(prevSong.getArtist(), 10);
+                addToHeavyRotation(prevSong);
+            } else if (completionRatio > 0.4) {
+                updateArtistAffinity(prevSong.getArtist(), 3);
+            }
+        }
+    }
+
+    private void updateArtistAffinity(String artist, int scoreDelta) {
+        if (artist == null || artist.equals("Unknown Artist") || artist.contains("Various")) return;
+        try {
+            String jsonStr = sharedPreferences.getString(KEY_TELEMETRY_AFFINITY, "{}");
+            JSONObject affinityDB = new JSONObject(jsonStr);
+
+            int currentScore = affinityDB.optInt(artist, 0);
+            int newScore = Math.max(0, currentScore + scoreDelta); 
+
+            affinityDB.put(artist, newScore);
+            sharedPreferences.edit().putString(KEY_TELEMETRY_AFFINITY, affinityDB.toString()).apply();
+        } catch (Exception e) { Log.e("TelemetryEngine", "Affinity update failed", e); }
+    }
+
+    private void addToHeavyRotation(Song song) {
+        try {
+            String jsonStr = sharedPreferences.getString(KEY_TELEMETRY_HISTORY, "[]");
+            JSONArray historyDB = new JSONArray(jsonStr);
+
+            JSONObject trackData = new JSONObject();
+            trackData.put("id", song.getId());
+            trackData.put("title", song.getTitle());
+            trackData.put("artist", song.getArtist());
+            trackData.put("thumbnailUrl", song.getThumbnailUrl());
+            trackData.put("timestamp", System.currentTimeMillis());
+
+            JSONArray updatedHistory = new JSONArray();
+            updatedHistory.put(trackData);
+
+            int limit = Math.min(historyDB.length(), 99);
+            for (int i = 0; i < limit; i++) {
+                updatedHistory.put(historyDB.getJSONObject(i));
+            }
+
+            sharedPreferences.edit().putString(KEY_TELEMETRY_HISTORY, updatedHistory.toString()).apply();
+        } catch (Exception e) { Log.e("TelemetryEngine", "History update failed", e); }
+    }
+
     public static String getCurrentTimeBucket() {
         int hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
         if (hour >= 5 && hour < 11) return "Morning";
@@ -90,12 +167,10 @@ public class SharedMusicViewModel extends AndroidViewModel {
 
     public void playSongWithContext(Song song, List<Song> queue, String contextName) {
         this.currentQueue.clear();
-
         if (queue != null && !queue.isEmpty()) this.currentQueue.addAll(queue);
         else this.currentQueue.add(song);
 
         this.playingContext.setValue(contextName);
-
         this.currentQueueIndex = -1;
         for (int i = 0; i < currentQueue.size(); i++) {
             if (currentQueue.get(i).getId().equals(song.getId())) {
@@ -104,27 +179,28 @@ public class SharedMusicViewModel extends AndroidViewModel {
             }
         }
         if (this.currentQueueIndex == -1) this.currentQueueIndex = 0;
-
         setSong(song);
     }
 
     public void skipToNext() {
         if (currentQueue.isEmpty()) return;
         currentQueueIndex++;
-        if (currentQueueIndex >= currentQueue.size()) currentQueueIndex = 0; // Loop queue
+        if (currentQueueIndex >= currentQueue.size()) currentQueueIndex = 0; 
         setSong(currentQueue.get(currentQueueIndex));
     }
 
     public void skipToPrevious() {
         if (currentQueue.isEmpty()) return;
         currentQueueIndex--;
-        if (currentQueueIndex < 0) currentQueueIndex = currentQueue.size() - 1; // Wrap around
+        if (currentQueueIndex < 0) currentQueueIndex = currentQueue.size() - 1; 
         setSong(currentQueue.get(currentQueueIndex));
     }
 
-    // ================= STANDARD PLAYBACK ENGINE =================
+    // ================= CORE PLAYBACK ENGINE =================
 
     public void setSong(Song song) {
+        recordTelemetryForCurrentSong();
+        currentSongStartTime = System.currentTimeMillis();
         currentSong.setValue(song);
         isPlaying.setValue(true);
     }
@@ -132,6 +208,7 @@ public class SharedMusicViewModel extends AndroidViewModel {
     public LiveData<Song> getCurrentSong() { return currentSong; }
     public LiveData<Boolean> getIsPlaying() { return isPlaying; }
     public void togglePlayPause() { if (isPlaying.getValue() != null) isPlaying.setValue(!isPlaying.getValue()); }
+    public void setPlaying(boolean playing) { isPlaying.postValue(playing); }
 
 
     // ================= JAMMING ENGINE (SOCKET.IO) =================
@@ -143,7 +220,6 @@ public class SharedMusicViewModel extends AndroidViewModel {
                     try {
                         JSONObject data = (JSONObject) args[0];
                         JamState state = new JamState();
-                        // Backward compat with socket relay
                         state.videoId = data.optString("videoId", data.optString("id"));
                         state.title = data.getString("title");
                         state.artist = data.getString("artist");
@@ -191,7 +267,7 @@ public class SharedMusicViewModel extends AndroidViewModel {
         try {
             JSONObject data = new JSONObject();
             data.put("roomCode", jamRoomCode.getValue());
-            data.put("videoId", song.getId()); // Maintaining socket JSON compat
+            data.put("videoId", song.getId()); 
             data.put("title", song.getTitle());
             data.put("artist", song.getArtist());
             data.put("thumbnailUrl", song.getThumbnailUrl());
@@ -219,20 +295,18 @@ public class SharedMusicViewModel extends AndroidViewModel {
 
     private String escape(String data) {
         if (data == null) return "";
-        return data.replace("'", "''"); // Replaces ' with '' for SQL safety
+        return data.replace("'", "''"); 
     }
     public void createPlaylist(String name) {
         String playlistId = UUID.randomUUID().toString();
-        String userId = currentUser.getUid(); // Replace with your actual UserID logic
+        String userId = currentUser.getUid(); 
 
-        // 1. Local Update
         List<Playlist> current = playlists.getValue();
         if (current == null) return;
         current.add(new Playlist(playlistId, name, true));
         playlists.setValue(current);
         savePlaylists(current);
 
-        // 2. Database Export
         String sql = String.format(
                 "INSERT INTO Playlists (PlaylistID, UserID, name, createdAt) " +
                         "VALUES ('%s', '%s', '%s', NOW());",
@@ -249,10 +323,8 @@ public class SharedMusicViewModel extends AndroidViewModel {
     public void addSongToPlaylist(String playlistId, Song song) {
         List<Playlist> current = playlists.getValue();
         if (current == null) return;
-
         for (Playlist p : current) {
             if (p.getId().equals(playlistId)) {
-                // Check if song already exists locally
                 boolean exists = false;
                 for (Song s : p.getSongs()) {
                     if (s.getId().equals(song.getId())) {
@@ -260,17 +332,12 @@ public class SharedMusicViewModel extends AndroidViewModel {
                         break;
                     }
                 }
-
                 if (!exists) {
-                    // 1. UPDATE LOCAL UI IMMEDIATELY
                     p.getSongs().add(0, song);
                     playlists.setValue(current);
                     savePlaylists(current);
-
-                    // 2. SEQUENTIAL DATABASE PUSH
                     new Thread(() -> {
                         try {
-                            // STEP A: Insert into SongCache first
                             String songSql = String.format(
                                     "INSERT IGNORE INTO SongCache (SongID, title, artist, album, durationSec, artworkUrl) " +
                                             "VALUES (%s, %s, %s, %s, %d, %s);",
@@ -282,11 +349,7 @@ public class SharedMusicViewModel extends AndroidViewModel {
                                     sqlSafe(song.getThumbnailUrl())
                             );
                             DB.execute(songSql);
-
-                            // --- THE 2 SECOND SAFETY BUFFER ---
                             Thread.sleep(2000);
-
-                            // STEP B: Link to Playlist after the delay
                             String linkSql = String.format(
                                     "INSERT INTO PlaylistSongs (PlaylistID, SongID, addedAt) " +
                                             "VALUES (%s, %s, NOW()) " +
@@ -295,10 +358,7 @@ public class SharedMusicViewModel extends AndroidViewModel {
                                     sqlSafe(song.getId())
                             );
                             DB.execute(linkSql);
-
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
+                        } catch (InterruptedException e) { e.printStackTrace(); }
                     }).start();
                 }
                 break;
@@ -322,11 +382,9 @@ public class SharedMusicViewModel extends AndroidViewModel {
             }
         }
         playlists.setValue(current); savePlaylists(current);
-
         if (removed) removeLikedSongFromDb(song);
     }
 
-    // Only deletes from the liked playlist (no removals for other playlists)
     public void removeSongFromLiked(Song song) {
         if (song == null) return;
         List<Playlist> current = playlists.getValue();
@@ -403,11 +461,9 @@ public class SharedMusicViewModel extends AndroidViewModel {
                 obj.put("id", p.getId());
                 obj.put("name", p.getName());
                 obj.put("isDeletable", p.isDeletable());
-
                 JSONArray songArr = new JSONArray();
                 for (Song s : p.getSongs()) {
                     JSONObject sObj = new JSONObject();
-                    // New Architecture Save Format
                     sObj.put("id", s.getId() != null ? s.getId() : s.getVideoId());
                     sObj.put("title", s.getTitle());
                     sObj.put("artist", s.getArtist());
@@ -440,20 +496,14 @@ public class SharedMusicViewModel extends AndroidViewModel {
                 JSONObject obj = arr.getJSONObject(i);
                 Playlist p = new Playlist(obj.getString("id"), obj.getString("name"), obj.getBoolean("isDeletable"));
                 JSONArray songArr = obj.getJSONArray("songs");
-
                 for (int j = 0; j < songArr.length(); j++) {
                     JSONObject sObj = songArr.getJSONObject(j);
-
-                    // Backward Compatibility Check (Old 'videoId' vs New 'id')
                     String id = sObj.has("id") ? sObj.getString("id") : sObj.getString("videoId");
                     String album = sObj.has("album") ? sObj.getString("album") : "Unknown Album";
                     long duration = sObj.has("duration") ? sObj.getLong("duration") : 0;
-
                     Song s = new Song(id, sObj.getString("title"), sObj.getString("artist"), album, sObj.getString("thumbnailUrl"), duration);
-
                     if (sObj.has("streamUrl")) s.setStreamUrl(sObj.getString("streamUrl"));
                     if (sObj.has("localPath")) s.setLocalPath(sObj.getString("localPath"));
-
                     p.getSongs().add(s);
                 }
                 loaded.add(p);
@@ -462,33 +512,21 @@ public class SharedMusicViewModel extends AndroidViewModel {
         } catch (Exception e) { Log.e("ViewModel", "Load Failed", e); }
     }
 
-    public interface DeletionCallback {
-        void onComplete(boolean success);
-    }
+    public interface DeletionCallback { void onComplete(boolean success); }
 
     public void deleteCurrentUserData(DeletionCallback callback) {
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-        if (user == null) {
-            if (callback != null) callback.onComplete(false);
-            return;
-        }
-
+        if (user == null) { if (callback != null) callback.onComplete(false); return; }
         Executors.newSingleThreadExecutor().execute(() -> {
             boolean success = DB.deleteUserDataTransactional(user.getUid());
             if (success) {
-                sharedPreferences.edit()
-                        .remove(KEY_PLAYLISTS)
-                        .apply();
-
+                sharedPreferences.edit().remove(KEY_PLAYLISTS).remove(KEY_TELEMETRY_AFFINITY).remove(KEY_TELEMETRY_HISTORY).apply();
                 List<Playlist> reset = new ArrayList<>();
                 reset.add(new Playlist("liked", "Liked Songs", false));
                 reset.add(new Playlist("downloads", "Downloads", false));
                 playlists.postValue(reset);
             }
-
-            new Handler(Looper.getMainLooper()).post(() -> {
-                if (callback != null) callback.onComplete(success);
-            });
+            new Handler(Looper.getMainLooper()).post(() -> { if (callback != null) callback.onComplete(success); });
         });
     }
 }

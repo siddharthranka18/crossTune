@@ -16,25 +16,22 @@ import androidx.appcompat.widget.AppCompatSeekBar;
 
 public class SquigglySeekBar extends AppCompatSeekBar {
 
-    // Paints
     private final Paint wavePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint trackPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint thumbPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint glowPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-
     private final Path wavePath = new Path();
 
-    // Aesthetic Configuration (Dynamically scaled to screen density later)
-    private float amplitude = 5f;     // Subtle, elegant wave height
-    private float waveLength = 45f;   // Smooth, long wave cycles
-    private float strokeWidth = 4.5f; // Thick, premium track
-    private float thumbRadius = 6f;   // Sleek thumb
-    private float thumbGlowRadius = 18f; // Beautiful aura
+    private float amplitude = 5f;
+    private float waveLength = 45f;
+    private float strokeWidth = 4.5f;
+    private float thumbRadius = 6f;
+    private float thumbGlowRadius = 18f;
 
-    // State Tracking
     private float phase = 0f;
     private float thumbScale = 1f;
     private ValueAnimator waveAnimator;
+    private boolean isWavy = false;
 
     public SquigglySeekBar(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -42,12 +39,10 @@ public class SquigglySeekBar extends AppCompatSeekBar {
     }
 
     private void init() {
-        // 1. Destroy Default Android Rendering completely
         setProgressDrawable(new ColorDrawable(Color.TRANSPARENT));
         setThumb(new ColorDrawable(Color.TRANSPARENT));
         setSplitTrack(false);
 
-        // 2. Scale aesthetics to match the device's exact pixel density
         float density = getResources().getDisplayMetrics().density;
         amplitude *= density;
         waveLength *= density;
@@ -55,7 +50,6 @@ public class SquigglySeekBar extends AppCompatSeekBar {
         thumbRadius *= density;
         thumbGlowRadius *= density;
 
-        // 3. Setup Paints
         wavePaint.setStyle(Paint.Style.STROKE);
         wavePaint.setStrokeCap(Paint.Cap.ROUND);
         wavePaint.setStrokeWidth(strokeWidth);
@@ -64,42 +58,43 @@ public class SquigglySeekBar extends AppCompatSeekBar {
         trackPaint.setStyle(Paint.Style.STROKE);
         trackPaint.setStrokeCap(Paint.Cap.ROUND);
         trackPaint.setStrokeWidth(strokeWidth);
-        trackPaint.setColor(Color.parseColor("#33FFFFFF")); // 20% opacity flat line
+        trackPaint.setColor(Color.parseColor("#33FFFFFF"));
 
         thumbPaint.setStyle(Paint.Style.FILL);
         thumbPaint.setColor(Color.WHITE);
 
         glowPaint.setStyle(Paint.Style.FILL);
-        glowPaint.setColor(Color.parseColor("#4DFFFFFF")); // 30% opacity glow
+        glowPaint.setColor(Color.parseColor("#4DFFFFFF"));
 
-        startWaveAnimation();
-    }
-
-    private void startWaveAnimation() {
         waveAnimator = ValueAnimator.ofFloat(0f, (float) (Math.PI * 2));
-        waveAnimator.setDuration(1200); // 1.2 seconds per wave cycle (Butter smooth)
+        waveAnimator.setDuration(1200);
         waveAnimator.setRepeatCount(ValueAnimator.INFINITE);
         waveAnimator.setInterpolator(new LinearInterpolator());
         waveAnimator.addUpdateListener(anim -> {
-            phase = (float) anim.getAnimatedValue();
-            invalidate(); // 60FPS UI Redraw
+            if (isWavy) {
+                phase = (float) anim.getAnimatedValue();
+                invalidate();
+            }
         });
-        waveAnimator.start();
     }
 
-    // ==========================================
-    // TACTILE FEEDBACK: Grow/Shrink on Touch
-    // ==========================================
+    public void setWavy(boolean wavy) {
+        this.isWavy = wavy;
+        if (wavy && !waveAnimator.isRunning()) {
+            waveAnimator.start();
+        } else if (!wavy && waveAnimator.isRunning()) {
+            waveAnimator.cancel();
+            phase = 0;
+            invalidate();
+        }
+    }
+
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         switch (event.getAction()) {
-            case MotionEvent.ACTION_DOWN:
-                animateThumb(1.5f); // Grow 50% larger when dragged
-                break;
+            case MotionEvent.ACTION_DOWN: animateThumb(1.5f); break;
             case MotionEvent.ACTION_UP:
-            case MotionEvent.ACTION_CANCEL:
-                animateThumb(1f); // Shrink back to normal
-                break;
+            case MotionEvent.ACTION_CANCEL: animateThumb(1f); break;
         }
         return super.onTouchEvent(event);
     }
@@ -108,16 +103,10 @@ public class SquigglySeekBar extends AppCompatSeekBar {
         ValueAnimator anim = ValueAnimator.ofFloat(thumbScale, targetScale);
         anim.setDuration(250);
         anim.setInterpolator(new DecelerateInterpolator());
-        anim.addUpdateListener(a -> {
-            thumbScale = (float) a.getAnimatedValue();
-            invalidate();
-        });
+        anim.addUpdateListener(a -> { thumbScale = (float) a.getAnimatedValue(); invalidate(); });
         anim.start();
     }
 
-    // ==========================================
-    // THE MASTERPIECE: Custom Render Engine
-    // ==========================================
     @Override
     protected synchronized void onDraw(Canvas canvas) {
         float width = getWidth() - getPaddingLeft() - getPaddingRight();
@@ -125,12 +114,10 @@ public class SquigglySeekBar extends AppCompatSeekBar {
         float progressRatio = getMax() > 0 ? (float) getProgress() / getMax() : 0;
         float progressX = getPaddingLeft() + (width * progressRatio);
 
-        // 1. Draw the Flat Track (The part of the song not played yet)
         if (progressX < getWidth() - getPaddingRight()) {
             canvas.drawLine(progressX, centerY, getWidth() - getPaddingRight(), centerY, trackPaint);
         }
 
-        // 2. Draw the Wavy Track (The part of the song already played)
         wavePath.reset();
         wavePath.moveTo(getPaddingLeft(), centerY);
 
@@ -139,12 +126,10 @@ public class SquigglySeekBar extends AppCompatSeekBar {
             for (int i = 0; i <= segments; i++) {
                 float x = getPaddingLeft() + i;
                 float distanceToThumb = progressX - x;
-
-                // FLUID PHYSICS: The wave flattens out perfectly as it reaches the thumb
                 float taperFactor = Math.min(1f, distanceToThumb / (waveLength / 1.5f));
-                float currentAmplitude = amplitude * taperFactor;
+                // If not wavy, amplitude is 0 (flat line)
+                float currentAmplitude = isWavy ? (amplitude * taperFactor) : 0;
 
-                // `- phase` makes the wave flow forward INTO the thumb (looks amazing)
                 float relativeX = x / waveLength;
                 float y = centerY + (float) (Math.sin(relativeX * Math.PI * 2 - phase) * currentAmplitude);
 
@@ -154,21 +139,15 @@ public class SquigglySeekBar extends AppCompatSeekBar {
             canvas.drawPath(wavePath, wavePaint);
         }
 
-        // 3. Draw the Glowing Thumb
         float currentThumbRadius = thumbRadius * thumbScale;
         float currentGlowRadius = thumbGlowRadius * thumbScale;
-
-        canvas.drawCircle(progressX, centerY, currentGlowRadius, glowPaint); // The Aura
-        canvas.drawCircle(progressX, centerY, currentThumbRadius, thumbPaint); // The Core
+        canvas.drawCircle(progressX, centerY, currentGlowRadius, glowPaint);
+        canvas.drawCircle(progressX, centerY, currentThumbRadius, thumbPaint);
     }
 
-    // ==========================================
-    // DYNAMIC ACCENT COLOR SUPPORT
-    // ==========================================
     public void setAccentColor(int color) {
         wavePaint.setColor(color);
         thumbPaint.setColor(color);
-        // Extract RGB and apply 30% alpha for the glow effect
         glowPaint.setColor(Color.argb(77, Color.red(color), Color.green(color), Color.blue(color)));
         invalidate();
     }

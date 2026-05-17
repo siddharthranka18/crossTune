@@ -1,12 +1,9 @@
 package com.example.crossTune;
 
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -30,14 +27,12 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
-import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.net.URLEncoder;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -50,7 +45,6 @@ import okhttp3.Response;
 
 public class SearchFragment extends Fragment {
 
-    // UI Elements
     private EditText etSearchInput;
     private ImageView btnExecuteSearch, btnClearSearch;
     private NestedScrollView layoutDiscoverContent;
@@ -58,31 +52,19 @@ public class SearchFragment extends Fragment {
     private ProgressBar pbInfiniteLoading;
     private TextView tvHeaderSearch;
 
-    // Adapters
     private SongAdapter searchAdapter;
     private DiscoverAdapter trendingAdapter, topPicksAdapter, curatedAdapter;
 
-    // Architecture
     private SharedMusicViewModel musicViewModel;
     private final Handler mainThreadHandler = new Handler(Looper.getMainLooper());
-
-    // SSOT Network Engine
     private final ExecutorService networkExecutor = Executors.newFixedThreadPool(4);
     private Future<?> activeSearchFuture;
 
     private final OkHttpClient httpClient = new OkHttpClient.Builder()
-            .connectTimeout(18, TimeUnit.SECONDS)
-            .readTimeout(18, TimeUnit.SECONDS)
-            .retryOnConnectionFailure(true)
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(15, TimeUnit.SECONDS)
             .build();
 
-    // Infinite Scroll & Context State
-    private String currentSearchQuery = "";
-    private int currentSearchPage = 1;
-    private boolean isFetchingMore = false;
-    private boolean hasMoreResults = true;
-
-    // UI Lists
     private List<Song> latestTrending = new ArrayList<>();
     private List<Song> latestTopPicks = new ArrayList<>();
     private List<Song> latestCurated = new ArrayList<>();
@@ -97,12 +79,9 @@ public class SearchFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-
         initViews(view);
         setupAdapters();
         setupListeners();
-
-        // Trigger the Discover Feed
         loadIntelligentDiscoverFeed();
     }
 
@@ -111,28 +90,25 @@ public class SearchFragment extends Fragment {
         etSearchInput = view.findViewById(R.id.et_search_input);
         btnExecuteSearch = view.findViewById(R.id.btn_execute_search);
         btnClearSearch = view.findViewById(R.id.btn_clear_search);
-
         layoutDiscoverContent = view.findViewById(R.id.layout_discover_content);
         rvTrending = view.findViewById(R.id.rv_trending);
         rvTopPicks = view.findViewById(R.id.rv_top_picks);
         rvCurated = view.findViewById(R.id.rv_curated_playlists);
-
         rvSearchResults = view.findViewById(R.id.rv_search_results);
         pbInfiniteLoading = view.findViewById(R.id.pb_infinite_loading);
     }
 
     private void setupAdapters() {
         musicViewModel = new ViewModelProvider(requireActivity()).get(SharedMusicViewModel.class);
-
         rvSearchResults.setLayoutManager(new LinearLayoutManager(getContext()));
         rvTrending.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
         rvTopPicks.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
         rvCurated.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
 
-        searchAdapter = new SongAdapter(song -> playSong(song, latestSearchResults, "Search Results"));
-        trendingAdapter = new DiscoverAdapter(song -> playSong(song, latestTrending, "Trending Now"));
-        topPicksAdapter = new DiscoverAdapter(song -> playSong(song, latestTopPicks, "On Repeat"));
-        curatedAdapter = new DiscoverAdapter(song -> playSong(song, latestCurated, "Made For You"));
+        searchAdapter = new SongAdapter(song -> musicViewModel.playSongWithContext(song, latestSearchResults, "Search Results"));
+        trendingAdapter = new DiscoverAdapter(song -> musicViewModel.playSongWithContext(song, latestTrending, "Trending Now"));
+        topPicksAdapter = new DiscoverAdapter(song -> musicViewModel.playSongWithContext(song, latestTopPicks, "On Repeat"));
+        curatedAdapter = new DiscoverAdapter(song -> musicViewModel.playSongWithContext(song, latestCurated, "Made For You"));
 
         rvSearchResults.setAdapter(searchAdapter);
         rvTrending.setAdapter(trendingAdapter);
@@ -140,328 +116,187 @@ public class SearchFragment extends Fragment {
         rvCurated.setAdapter(curatedAdapter);
     }
 
-    private void playSong(Song song, List<Song> contextList, String contextName) {
-        musicViewModel.playSongWithContext(song, contextList, contextName);
-    }
-
     private void setupListeners() {
         btnExecuteSearch.setOnClickListener(v -> initiateSearch());
-
         etSearchInput.setOnEditorActionListener((v, actionId, event) -> {
-            if (actionId == EditorInfo.IME_ACTION_SEARCH || (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER && event.getAction() == KeyEvent.ACTION_DOWN)) {
+            if (actionId == EditorInfo.IME_ACTION_SEARCH || (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER)) {
                 initiateSearch();
                 return true;
             }
             return false;
         });
-
-        etSearchInput.addTextChangedListener(new TextWatcher() {
-            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
-                btnClearSearch.setVisibility(s.length() > 0 ? View.VISIBLE : View.GONE);
-            }
-            @Override public void afterTextChanged(Editable s) {}
-        });
-
         btnClearSearch.setOnClickListener(v -> {
             etSearchInput.setText("");
-            hideKeyboard();
             showDiscoverState();
-        });
-
-        rvSearchResults.addOnScrollListener(new RecyclerView.OnScrollListener() {
-            @Override
-            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
-                if (dy > 0 && !recyclerView.canScrollVertically(1)) {
-                    if (!isFetchingMore && hasMoreResults) {
-                        loadMoreResults();
-                    }
-                }
-            }
-        });
-    }
-
-    private void showSearchState() {
-        tvHeaderSearch.setText("Results");
-        if (layoutDiscoverContent.getVisibility() == View.VISIBLE) {
-            layoutDiscoverContent.animate().alpha(0f).setDuration(200).withEndAction(() -> layoutDiscoverContent.setVisibility(View.GONE));
-            rvSearchResults.setVisibility(View.VISIBLE);
-            rvSearchResults.setAlpha(0f);
-            rvSearchResults.animate().alpha(1f).setDuration(200).start();
-        }
-    }
-
-    private void showDiscoverState() {
-        tvHeaderSearch.setText("Discover");
-        if (rvSearchResults.getVisibility() == View.VISIBLE) {
-            rvSearchResults.animate().alpha(0f).setDuration(200).withEndAction(() -> rvSearchResults.setVisibility(View.GONE));
-            layoutDiscoverContent.setVisibility(View.VISIBLE);
-            layoutDiscoverContent.setAlpha(0f);
-            layoutDiscoverContent.animate().alpha(1f).setDuration(200).start();
-        }
-    }
-
-    private void hideKeyboard() {
-        View view = requireActivity().getCurrentFocus();
-        if (view != null) {
-            InputMethodManager imm = (InputMethodManager) requireActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
-            if (imm != null) imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
-        }
-        etSearchInput.clearFocus();
-    }
-
-    private void loadIntelligentDiscoverFeed() {
-        networkExecutor.submit(() -> {
-            try {
-                // Now fetching categories directly instead of relying on telemetry history
-                List<Song> topPicks = fetchFromJioSaavnOfficial("latest top hits", 1);
-                List<Song> curated = fetchFromJioSaavnOfficial("lofi chill study", 1);
-                List<Song> trending = fetchFromJioSaavnOfficial("trending charts", 1);
-
-                mainThreadHandler.post(() -> {
-                    if (isAdded()) {
-                        latestTopPicks = topPicks;
-                        latestCurated = curated;
-                        latestTrending = trending;
-
-                        topPicksAdapter.setSongs(latestTopPicks);
-                        curatedAdapter.setSongs(latestCurated);
-                        trendingAdapter.setSongs(latestTrending);
-                    }
-                });
-            } catch (Exception e) { Log.e("DiscoverEngine", "Failed to load discover feed", e); }
         });
     }
 
     private void initiateSearch() {
         String query = etSearchInput.getText().toString().trim();
         if (query.isEmpty()) return;
-
-        currentSearchQuery = query;
-        currentSearchPage = 1;
-        hasMoreResults = true;
-
         hideKeyboard();
         showSearchState();
-        latestSearchResults.clear();
-        searchAdapter.setSongs(new ArrayList<>());
-        etSearchInput.setHint("Searching...");
-
-        executeSearchTask(currentSearchQuery, currentSearchPage, false);
+        executeSearchTask(query);
     }
 
-    private void loadMoreResults() {
-        isFetchingMore = true;
-        currentSearchPage++;
+    private void executeSearchTask(String query) {
+        if (activeSearchFuture != null) activeSearchFuture.cancel(true);
         pbInfiniteLoading.setVisibility(View.VISIBLE);
-        executeSearchTask(currentSearchQuery, currentSearchPage, true);
-    }
-
-    private void executeSearchTask(String query, int page, boolean isAppending) {
-        if (activeSearchFuture != null && !activeSearchFuture.isDone() && !isAppending) activeSearchFuture.cancel(true);
-
+        searchAdapter.setSongs(new ArrayList<>());
+        
         activeSearchFuture = networkExecutor.submit(() -> {
             try {
-                List<Song> results = fetchFromJioSaavnOfficial(query, page);
-
+                List<Song> results = fetchSongs(query);
                 mainThreadHandler.post(() -> {
-                    if (isAdded()) {
-                        etSearchInput.setHint("Search songs, artists...");
-                        pbInfiniteLoading.setVisibility(View.GONE);
-                        isFetchingMore = false;
-
-                        if (isAppending) {
-                            latestSearchResults.addAll(results);
-                            searchAdapter.addSongs(results);
-                        } else {
-                            latestSearchResults = new ArrayList<>(results);
-                            searchAdapter.setSongs(latestSearchResults);
-                        }
+                    latestSearchResults = results;
+                    searchAdapter.setSongs(results);
+                    pbInfiniteLoading.setVisibility(View.GONE);
+                    if (results.isEmpty()) {
+                        Toast.makeText(getContext(), "Server returned no results.", Toast.LENGTH_SHORT).show();
                     }
                 });
             } catch (Exception e) {
-                Log.e("SSOTSearch", "Error", e);
+                Log.e("SearchFragment", "Search process crashed", e);
                 mainThreadHandler.post(() -> {
-                    if (isAdded()) {
-                        pbInfiniteLoading.setVisibility(View.GONE);
-                        isFetchingMore = false;
-                        if (!isAppending) {
-                            etSearchInput.setHint("Search failed.");
-                            Toast.makeText(getContext(), "Check your network.", Toast.LENGTH_LONG).show();
-                        } else {
-                            hasMoreResults = false;
-                        }
-                    }
+                    pbInfiniteLoading.setVisibility(View.GONE);
+                    Toast.makeText(getContext(), "Network error. Please try again.", Toast.LENGTH_SHORT).show();
                 });
             }
         });
     }
 
-    private List<Song> fetchFromJioSaavnOfficial(String query, int page) throws Exception {
-        String safeQuery = URLEncoder.encode(query, "UTF-8");
-        try {
-            return parseUnofficialAPI("https://saavn.dev/api/search/songs?query=" + safeQuery + "&page=" + page + "&limit=25");
-        } catch (Exception e1) {
+    private void loadIntelligentDiscoverFeed() {
+        networkExecutor.submit(() -> {
             try {
-                return parseUnofficialAPI("https://jiosaavn-api-privatecvc2.vercel.app/search/songs?query=" + safeQuery + "&page=" + page + "&limit=25");
-            } catch (Exception e2) {
-                return parseOfficialAPI(query, page);
-            }
-        }
+                latestTrending = fetchSongs("trending hindi");
+                latestTopPicks = fetchSongs("new releases");
+                latestCurated = fetchSongs("hits 2024");
+                mainThreadHandler.post(() -> {
+                    trendingAdapter.setSongs(latestTrending);
+                    topPicksAdapter.setSongs(latestTopPicks);
+                    curatedAdapter.setSongs(latestCurated);
+                });
+            } catch (Exception e) { Log.e("SearchFragment", "Feed failed", e); }
+        });
     }
 
-    private List<Song> parseUnofficialAPI(String url) throws Exception {
-        Request request = new Request.Builder().url(url).get().build();
-        try (Response response = httpClient.newCall(request).execute()) {
-            if (!response.isSuccessful()) throw new Exception("HTTP " + response.code());
-            JSONObject json = new JSONObject(response.body().string());
+    private List<Song> fetchSongs(String query) throws Exception {
+        String[] apis = {
+            "https://saavn.dev/api/search/songs?query=",
+            "https://jiosaavn-api-privatecvc2.vercel.app/search/songs?query="
+        };
 
-            JSONArray results = null;
-            if (json.has("data")) {
-                Object dataObj = json.get("data");
-                if (dataObj instanceof JSONObject && ((JSONObject)dataObj).has("results")) {
-                    results = ((JSONObject)dataObj).getJSONArray("results");
-                } else if (dataObj instanceof JSONArray) {
-                    results = (JSONArray) dataObj;
+        for (String baseUrl : apis) {
+            try {
+                String url = baseUrl + URLEncoder.encode(query, "UTF-8");
+                Request request = new Request.Builder().url(url).build();
+                try (Response response = httpClient.newCall(request).execute()) {
+                    if (!response.isSuccessful()) continue;
+                    String body = response.body().string();
+                    JSONObject json = new JSONObject(body);
+                    
+                    JSONArray results = findResultsArray(json);
+                    if (results != null && results.length() > 0) {
+                        return parseResults(results);
+                    }
                 }
-            } else if (json.has("results")) {
-                results = json.getJSONArray("results");
+            } catch (Exception e) { Log.e("SearchFragment", "API failed: " + baseUrl); }
+        }
+        return new ArrayList<>();
+    }
+
+    private JSONArray findResultsArray(JSONObject json) {
+        // Deep search for results array across different API versions
+        if (json.has("data")) {
+            Object data = json.opt("data");
+            if (data instanceof JSONObject) {
+                JSONObject dataObj = (JSONObject) data;
+                if (dataObj.has("results")) return dataObj.optJSONArray("results");
+                if (dataObj.has("songs")) return dataObj.optJSONArray("songs");
+            } else if (data instanceof JSONArray) {
+                return (JSONArray) data;
             }
+        }
+        if (json.has("results")) return json.optJSONArray("results");
+        return null;
+    }
 
-            if (results == null) throw new Exception("Unrecognized JSON structure");
-
-            List<Song> songs = new ArrayList<>();
-            for (int i = 0; i < results.length(); i++) {
+    private List<Song> parseResults(JSONArray results) {
+        List<Song> songs = new ArrayList<>();
+        for (int i = 0; i < results.length(); i++) {
+            try {
                 JSONObject item = results.getJSONObject(i);
                 String id = item.optString("id", "");
-                String title = item.optString("name", item.optString("title", "")).replace("&quot;", "\"").replace("&amp;", "&").trim();
-                if (id.isEmpty() || title.isEmpty()) continue;
+                if (id.isEmpty()) continue;
 
-                String artist = "Unknown Artist";
-                if (item.has("primaryArtists")) artist = item.optString("primaryArtists").trim();
-                else if (item.has("subtitle")) artist = item.optString("subtitle").trim();
+                String title = item.optString("name", item.optString("title", "Unknown Track"));
+                
+                String artist = "Various Artists";
+                if (item.has("artists")) {
+                    Object a = item.opt("artists");
+                    if (a instanceof JSONObject) {
+                        JSONArray primary = ((JSONObject) a).optJSONArray("primary");
+                        if (primary != null && primary.length() > 0) artist = primary.getJSONObject(0).optString("name", artist);
+                    } else if (a instanceof JSONArray) {
+                        JSONArray arr = (JSONArray) a;
+                        if (arr.length() > 0) artist = arr.getJSONObject(0).optString("name", artist);
+                    }
+                } else if (item.has("primaryArtists")) {
+                    artist = item.optString("primaryArtists", artist);
+                }
 
                 String album = "Unknown Album";
                 if (item.has("album")) {
-                    Object albumObj = item.get("album");
-                    if (albumObj instanceof JSONObject) album = ((JSONObject)albumObj).optString("name", "Unknown Album");
-                    else if (albumObj instanceof String) album = (String) albumObj;
+                    Object alb = item.opt("album");
+                    if (alb instanceof JSONObject) album = ((JSONObject) alb).optString("name", album);
+                    else album = String.valueOf(alb);
                 }
 
-                long duration = item.optLong("duration", 0);
-
-                String thumbnail = "";
+                String thumb = "";
                 if (item.has("image")) {
-                    Object imgObj = item.get("image");
-                    if (imgObj instanceof JSONArray) {
-                        JSONArray imageArr = (JSONArray) imgObj;
-                        if (imageArr.length() > 0) thumbnail = imageArr.getJSONObject(imageArr.length() - 1).optString("link", imageArr.getJSONObject(imageArr.length() - 1).optString("url", ""));
-                    } else if (imgObj instanceof String) {
-                        thumbnail = (String) imgObj;
+                    JSONArray images = item.optJSONArray("image");
+                    if (images != null && images.length() > 0) {
+                        thumb = images.getJSONObject(images.length() - 1).optString("url", images.getJSONObject(images.length() - 1).optString("link", ""));
                     }
                 }
-                thumbnail = thumbnail.replace("150x150", "500x500");
 
-                Song song = new Song(id, title, artist, album, thumbnail, duration);
-
-                if (item.has("downloadUrl")) {
-                    Object dlObj = item.get("downloadUrl");
-                    if (dlObj instanceof JSONArray) {
-                        JSONArray downloadArr = (JSONArray) dlObj;
-                        if (downloadArr.length() > 0) {
-                            String streamUrl = downloadArr.getJSONObject(downloadArr.length() - 1).optString("link", downloadArr.getJSONObject(downloadArr.length() - 1).optString("url", ""));
-                            if (!streamUrl.isEmpty()) song.setStreamUrl(streamUrl);
-                        }
-                    }
-                }
+                Song song = new Song(id, title, artist, album, thumb, item.optLong("duration", 0));
                 songs.add(song);
-            }
-            return songs;
+            } catch (Exception e) { Log.e("SearchFragment", "Parse item failed"); }
         }
+        return songs;
     }
 
-    private List<Song> parseOfficialAPI(String query, int page) throws Exception {
-        String safeQuery = URLEncoder.encode(query, "UTF-8");
-        Request request = new Request.Builder()
-                .url("https://www.jiosaavn.com/api.php?__call=search.getResults&_format=json&n=25&p=" + page + "&q=" + safeQuery)
-                .get()
-                .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
-                .build();
+    private void showSearchState() { layoutDiscoverContent.setVisibility(View.GONE); rvSearchResults.setVisibility(View.VISIBLE); tvHeaderSearch.setText("Results"); }
+    private void showDiscoverState() { rvSearchResults.setVisibility(View.GONE); layoutDiscoverContent.setVisibility(View.VISIBLE); tvHeaderSearch.setText("Discover"); }
 
-        try (Response response = httpClient.newCall(request).execute()) {
-            if (!response.isSuccessful()) throw new Exception("Official API HTTP " + response.code());
-            JSONObject json = new JSONObject(response.body().string());
-            if (!json.has("results")) throw new Exception("No results found");
-            JSONArray data = json.getJSONArray("results");
-
-            List<Song> songs = new ArrayList<>();
-            for (int i = 0; i < data.length(); i++) {
-                JSONObject item = data.getJSONObject(i);
-                String title = item.optString("title", item.optString("song", "")).replace("&quot;", "\"").replace("&amp;", "&").trim();
-                if (title.isEmpty()) continue;
-
-                String artist = item.optString("subtitle", "").replace("&quot;", "\"").replace("&amp;", "&").trim();
-                String album = "Unknown Album";
-
-                if (item.has("more_info")) {
-                    JSONObject moreInfo = item.getJSONObject("more_info");
-                    if (artist.isEmpty()) artist = moreInfo.optString("primary_artists", "").replace("&quot;", "\"").replace("&amp;", "&").trim();
-                    album = moreInfo.optString("album", "Unknown Album").replace("&quot;", "\"").replace("&amp;", "&").trim();
-                }
-                if (artist.isEmpty()) artist = "Unknown Artist";
-
-                String id = item.optString("id");
-                String thumbnail = item.optString("image", "").replace("150x150", "500x500");
-
-                Song song = new Song(id, title, artist, album, thumbnail, 0);
-                songs.add(song);
-            }
-            return songs;
+    private void hideKeyboard() {
+        View view = requireActivity().getCurrentFocus();
+        if (view != null) {
+            InputMethodManager imm = (InputMethodManager) requireActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+            imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
         }
     }
 
     private static class DiscoverAdapter extends RecyclerView.Adapter<DiscoverAdapter.Holder> {
         private List<Song> list = new ArrayList<>();
         private final SongAdapter.OnSongClickListener listener;
-
         DiscoverAdapter(SongAdapter.OnSongClickListener listener) { this.listener = listener; }
-
         void setSongs(List<Song> songs) { this.list = songs; notifyDataSetChanged(); }
-
         @NonNull @Override public Holder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
             return new Holder(LayoutInflater.from(parent.getContext()).inflate(R.layout.item_discover_card, parent, false));
         }
-
         @Override public void onBindViewHolder(@NonNull Holder holder, int position) {
-            Song song = list.get(position);
-            holder.title.setText(song.getTitle());
-            holder.artist.setText(song.getArtist());
-
-            Glide.with(holder.itemView.getContext())
-                    .load(song.getThumbnailUrl())
-                    .diskCacheStrategy(DiskCacheStrategy.ALL)
-                    .transition(DrawableTransitionOptions.withCrossFade(300))
-                    .into(holder.thumbnail);
-
-            holder.itemView.setOnClickListener(v -> listener.onSongClick(song));
+            Song s = list.get(position);
+            holder.title.setText(s.getTitle());
+            holder.artist.setText(s.getArtist());
+            Glide.with(holder.itemView).load(s.getThumbnailUrl()).diskCacheStrategy(DiskCacheStrategy.ALL).into(holder.thumbnail);
+            holder.itemView.setOnClickListener(v -> listener.onSongClick(s));
         }
-
         @Override public int getItemCount() { return list.size(); }
-
         static class Holder extends RecyclerView.ViewHolder {
             ImageView thumbnail; TextView title, artist;
-            Holder(@NonNull View v) {
-                super(v);
-                thumbnail = v.findViewById(R.id.iv_discover_thumbnail);
-                title = v.findViewById(R.id.tv_discover_title);
-                artist = v.findViewById(R.id.tv_discover_artist);
-            }
+            Holder(View v) { super(v); thumbnail = v.findViewById(R.id.iv_discover_thumbnail); title = v.findViewById(R.id.tv_discover_title); artist = v.findViewById(R.id.tv_discover_artist); }
         }
-    }
-
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        if (activeSearchFuture != null) activeSearchFuture.cancel(true);
     }
 }
